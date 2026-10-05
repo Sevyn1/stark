@@ -41,7 +41,7 @@ test('employee signup can create its minimal invitation directory entry atomical
 test('invitation acceptance joins only the invited workspace atomically',async()=>{
  const m=db('ma');const invite={organisationName:'A',receiverId:'u',managerId:'ma',status:'pending',sentAt:1,actionAt:1};
  const send=writeBatch(m);send.update(doc(m,'organisations','A'),{prospectiveEmployees:arrayUnion('u')});send.set(doc(m,'invites','u'),invite);await assertSucceeds(send.commit());
- const s=db('u');await assertFails(updateDoc(doc(s,'users','u'),{organisation:'A'}));
+ const s=db('u');await assertFails(getDoc(doc(s,'users','ma')));await assertFails(getDoc(doc(s,'organisations','A')));await assertFails(updateDoc(doc(s,'users','u'),{organisation:'A'}));
  const b=writeBatch(s);b.update(doc(s,'invites','u'),{status:'accepted',actionAt:2});b.update(doc(s,'users','u'),{organisation:'A'});b.update(doc(s,'organisations','A'),{employees:arrayUnion('u'),prospectiveEmployees:arrayRemove('u')});b.update(doc(s,'messageGroup','A'),{membersUid:arrayUnion('u')});b.delete(doc(s,'employeeDirectory','u'));await assertSucceeds(b.commit());
 });
 test('workspace text messages enforce sender identity and reject live images',async()=>{
