@@ -72,7 +72,8 @@ service cloud.firestore {
     }
     match /invites/{uid} {
       allow get: if signed() && !exists(invitePath(uid)) && (uid == request.auth.uid || manager(me().organisation));
-      allow read: if signed() && (request.auth.uid == uid || resource.data.managerId == request.auth.uid);
+      allow get: if signed() && (request.auth.uid == uid || resource.data.managerId == request.auth.uid);
+      allow list: if signed() && (resource.data.receiverId == request.auth.uid || resource.data.managerId == request.auth.uid);
       allow create: if manager(request.resource.data.organisationName) && request.resource.data.managerId == request.auth.uid
         && request.resource.data.receiverId == uid && request.resource.data.status == 'pending'
         && get(userPath(uid)).data.isAdmin == false && get(userPath(uid)).data.organisation == '';

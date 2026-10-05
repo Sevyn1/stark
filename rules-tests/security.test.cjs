@@ -70,3 +70,10 @@ test('manager removal clears membership and restores the minimal directory atomi
  const s=db('ma');const b=writeBatch(s);b.delete(doc(s,'invites','e'));b.update(doc(s,'organisations','A'),{employees:arrayRemove('e'),prospectiveEmployees:arrayRemove('e')});b.update(doc(s,'users','e'),{organisation:''});b.set(doc(s,'employeeDirectory','e'),{uid:'e',firstName:'e',lastName:'Test',email:'e@example.test',isAdmin:false,organisation:''});b.update(doc(s,'messageGroup','A'),{membersUid:arrayRemove('e')});await assertSucceeds(b.commit());
  await assertFails(getDoc(doc(db('e'),'tasks','A::Task')));
 });
+test('new employees can query memberships and their invitation inbox before joining',async()=>{
+ const s=db('u');
+ await assertSucceeds(getDocs(query(collection(s,'organisations'),where('employees','array-contains','u'))));
+ await assertSucceeds(getDocs(query(collection(s,'invites'),where('receiverId','==','u'))));
+ await assertFails(getDocs(collection(s,'invites')));
+ await assertFails(getDocs(query(collection(s,'invites'),where('receiverId','==','e'))));
+});
