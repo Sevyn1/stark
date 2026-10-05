@@ -40,7 +40,6 @@ class ProfileView extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-
                   18.sbH,
                   CircleAvatar(
                     radius: 25.w,
@@ -54,17 +53,19 @@ class ProfileView extends ConsumerWidget {
                   Text(
                     'Log out',
                     style: TextStyle(
-                        fontSize: 16.sp,
-                        color: Pallete.blackColor,
-                        fontWeight: FontWeight.w600),
+                      fontSize: 16.sp,
+                      color: Pallete.blackColor,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   6.sbH,
                   Text(
                     'Are you sure?',
                     style: TextStyle(
-                        fontSize: 13.sp,
-                        color: Pallete.greyColor,
-                        fontWeight: FontWeight.w400),
+                      fontSize: 13.sp,
+                      color: Pallete.greyColor,
+                      fontWeight: FontWeight.w400,
+                    ),
                   ),
                   20.sbH,
                   // cancel
@@ -111,37 +112,42 @@ class ProfileView extends ConsumerWidget {
 
     final user = ref.watch(userProvider)!;
     return Scaffold(
-      appBar: MyAppBar(
-        title: 'Profile',
-      ),
+      appBar: MyAppBar(title: 'Profile'),
       body: SingleChildScrollView(
         child: SizedBox(
           height: height(context),
           width: width(context),
           child: Column(
             children: [
-              TextButton(onPressed: () => AppNavigator.of(context).push('/verify-email'), child: const Text('Verify email')),
+              TextButton(
+                onPressed: () => AppNavigator.of(context).push('/verify-email'),
+                child: const Text('Verify email'),
+              ),
               58.sbH,
               CircleAvatar(
                 radius: 50.w,
                 backgroundColor: Pallete.greey,
-                backgroundImage: user.profilePic.isEmpty ? null : NetworkImage(user.profilePic),
+                backgroundImage: user.profilePic.isEmpty
+                    ? null
+                    : NetworkImage(user.profilePic),
               ),
               27.sbH,
               Text(
                 '${user.firstName} ${user.lastName}',
                 style: TextStyle(
-                    fontSize: 22.sp,
-                    color: Pallete.blackish,
-                    fontWeight: FontWeight.w600),
+                  fontSize: 22.sp,
+                  color: Pallete.blackish,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               8.sbH,
               Text(
                 user.role == '' ? 'Role - - -' : user.role,
                 style: TextStyle(
-                    fontSize: 14.sp,
-                    color: Pallete.greyColor,
-                    fontWeight: FontWeight.w500),
+                  fontSize: 14.sp,
+                  color: Pallete.greyColor,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
               36.sbH,
               BButton(
@@ -164,9 +170,10 @@ class ProfileView extends ConsumerWidget {
                 title: Text(
                   'Log out',
                   style: TextStyle(
-                      fontSize: 18.sp,
-                      color: Pallete.blackColor,
-                      fontWeight: FontWeight.w400),
+                    fontSize: 18.sp,
+                    color: Pallete.blackColor,
+                    fontWeight: FontWeight.w400,
+                  ),
                 ),
                 trailing: Icon(
                   Icons.arrow_forward_ios_sharp,

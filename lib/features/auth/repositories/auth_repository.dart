@@ -26,8 +26,8 @@ class AuthRepository {
   AuthRepository({
     required FirebaseFirestore firestore,
     required FirebaseAuth auth,
-  })  : _auth = auth,
-        _firestore = firestore;
+  }) : _auth = auth,
+       _firestore = firestore;
 
   //! to sign up admin
   FutureEither<UserModel> signUpAdmin({
@@ -52,7 +52,7 @@ class AuthRepository {
           uid: userCredential.user!.uid,
           firstName: firstName,
           lastName: lastName,
-          profilePic: Constants.avatarDefault,
+          profilePic: '',
           email: userCredential.user!.email ?? email,
           isAdmin: isAdmin,
           organisation: '',
@@ -60,7 +60,21 @@ class AuthRepository {
           phone: '',
         );
         try {
-          await _users.doc(userCredential.user!.uid).set(userModel.toMap());
+          final batch = _firestore.batch();
+          batch.set(_users.doc(userModel.uid), userModel.toMap());
+          if (!isAdmin)
+            batch.set(
+              _firestore.collection('employeeDirectory').doc(userModel.uid),
+              {
+                'uid': userModel.uid,
+                'firstName': userModel.firstName,
+                'lastName': userModel.lastName,
+                'email': userModel.email,
+                'isAdmin': false,
+                'organisation': '',
+              },
+            );
+          await batch.commit();
         } catch (_) {
           // Roll back only the newly-created account if its profile cannot save.
           await userCredential.user!.delete();
@@ -100,9 +114,17 @@ class AuthRepository {
   }
 
   Stream<UserModel> getUserData(String uid) {
-    return _users.doc(uid).snapshots().map((event) => event.exists
-        ? UserModel.fromMap({...event.data() as Map<String, dynamic>, 'uid': uid})
-        : throw StateError('Profile not found'));
+    return _users
+        .doc(uid)
+        .snapshots()
+        .map(
+          (event) => event.exists
+              ? UserModel.fromMap({
+                  ...event.data() as Map<String, dynamic>,
+                  'uid': uid,
+                })
+              : throw StateError('Profile not found'),
+        );
   }
 
   Future<void> logOut() async {

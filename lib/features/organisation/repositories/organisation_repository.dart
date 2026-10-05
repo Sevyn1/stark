@@ -20,11 +20,14 @@ final organisationsRepositoryProvider = Provider((ref) {
 class OrganisationsRepository {
   final FirebaseFirestore _firestore;
   OrganisationsRepository({required FirebaseFirestore firestore})
-      : _firestore = firestore;
+    : _firestore = firestore;
 
   //! create organisation
-  FutureVoid createOrganisation(OrganisationModel organisation, String uid,
-      {OrgMessagingModel? messaging}) async {
+  FutureVoid createOrganisation(
+    OrganisationModel organisation,
+    String uid, {
+    OrgMessagingModel? messaging,
+  }) async {
     try {
       if (organisation.name.trim().isEmpty || organisation.name.contains('/')) {
         throw ArgumentError('Enter a valid organisation name.');
@@ -37,14 +40,19 @@ class OrganisationsRepository {
           throw StateError('Organisation with the same name exists');
         if (!user.exists) throw StateError('Manager profile does not exist');
         final profile = user.data() as Map<String, dynamic>;
-        if (profile['isAdmin'] != true) throw StateError('A manager account is required.');
-        if ((profile['organisation'] ?? '') != '') throw StateError('Your account already has a workspace.');
+        if (profile['isAdmin'] != true)
+          throw StateError('A manager account is required.');
+        if ((profile['organisation'] ?? '') != '')
+          throw StateError('Your account already has a workspace.');
         transaction.set(reference, organisation.toMap());
-        transaction
-            .update(_users.doc(uid), {'organisation': organisation.name});
+        transaction.update(_users.doc(uid), {
+          'organisation': organisation.name,
+        });
         if (messaging != null)
           transaction.set(
-              _messageGroup.doc(organisation.name), messaging.toMap());
+            _messageGroup.doc(organisation.name),
+            messaging.toMap(),
+          );
       });
       return right(null);
     } catch (e) {
@@ -78,7 +86,8 @@ class OrganisationsRepository {
         List<OrganisationModel> organisations = [];
         for (var doc in event.docs) {
           organisations.add(
-              OrganisationModel.fromMap(doc.data() as Map<String, dynamic>));
+            OrganisationModel.fromMap(doc.data() as Map<String, dynamic>),
+          );
         }
         return organisations;
       },
@@ -90,16 +99,15 @@ class OrganisationsRepository {
     return _organisations
         .where('employees', arrayContains: uid)
         .snapshots()
-        .map(
-      (event) {
-        List<OrganisationModel> organisations = [];
-        for (var doc in event.docs) {
-          organisations.add(
-              OrganisationModel.fromMap(doc.data() as Map<String, dynamic>));
-        }
-        return organisations;
-      },
-    );
+        .map((event) {
+          List<OrganisationModel> organisations = [];
+          for (var doc in event.docs) {
+            organisations.add(
+              OrganisationModel.fromMap(doc.data() as Map<String, dynamic>),
+            );
+          }
+          return organisations;
+        });
   }
 
   //! sack employee
@@ -108,6 +116,8 @@ class OrganisationsRepository {
     required String employeeId,
   }) async {
     try {
+      final profile =
+          (await _users.doc(employeeId).get()).data() as Map<String, dynamic>;
       final batch = _firestore.batch();
       batch.delete(_invites.doc(employeeId));
       batch.update(_organisations.doc(organisationName), {
@@ -115,12 +125,17 @@ class OrganisationsRepository {
         'prospectiveEmployees': FieldValue.arrayRemove([employeeId]),
       });
       batch.update(_users.doc(employeeId), {'organisation': ''});
-      batch.set(
-          _messageGroup.doc(organisationName),
-          {
-            'membersUid': FieldValue.arrayRemove([employeeId]),
-          },
-          SetOptions(merge: true));
+      batch.set(_firestore.collection('employeeDirectory').doc(employeeId), {
+        'uid': employeeId,
+        'firstName': profile['firstName'],
+        'lastName': profile['lastName'],
+        'email': profile['email'],
+        'isAdmin': false,
+        'organisation': '',
+      });
+      batch.set(_messageGroup.doc(organisationName), {
+        'membersUid': FieldValue.arrayRemove([employeeId]),
+      }, SetOptions(merge: true));
       await batch.commit();
       return right(null);
     } catch (e) {
@@ -130,8 +145,13 @@ class OrganisationsRepository {
 
   //! get organisation
   Stream<OrganisationModel> getOrganisationByName(String name) {
-    return _organisations.doc(name).snapshots().map((event) =>
-        OrganisationModel.fromMap(event.data() as Map<String, dynamic>));
+    return _organisations
+        .doc(name)
+        .snapshots()
+        .map(
+          (event) =>
+              OrganisationModel.fromMap(event.data() as Map<String, dynamic>),
+        );
   }
 
   //! search for employees
@@ -139,11 +159,16 @@ class OrganisationsRepository {
     final prefix = query.trim().toLowerCase();
     Query users = _users.where('isAdmin', isEqualTo: false);
     if (prefix.isNotEmpty)
-      users = users.where('email',
-          isGreaterThanOrEqualTo: prefix, isLessThanOrEqualTo: '$prefix\uf8ff');
-    return users.snapshots().map((event) => event.docs
-        .map((doc) => UserModel.fromMap(doc.data() as Map<String, dynamic>))
-        .toList());
+      users = users.where(
+        'email',
+        isGreaterThanOrEqualTo: prefix,
+        isLessThanOrEqualTo: '$prefix\uf8ff',
+      );
+    return users.snapshots().map(
+      (event) => event.docs
+          .map((doc) => UserModel.fromMap(doc.data() as Map<String, dynamic>))
+          .toList(),
+    );
   }
 
   // //

@@ -1,0 +1,14 @@
+{
+  "name": "stark-security-rules-tests",
+  "private": true,
+  "scripts": {
+    "test": "node --test security.test.cjs"
+  },
+  "devDependencies": {
+    "firebase": "12.19.0",
+    "@firebase/rules-unit-testing": "5.0.2"
+  },
+  "overrides": {
+    "@grpc/grpc-js": "1.14.5"
+  }
+}

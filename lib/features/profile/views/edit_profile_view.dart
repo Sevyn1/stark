@@ -1,3 +1,4 @@
+import 'package:stark/core/providers/firebase_provider.dart';
 import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -36,6 +37,7 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
   }
 
   Future<void> selectPhoto() async {
+    if (!imageUploadsEnabled) return;
     try {
       final selection = await FilePicker.pickFile(
         type: FileType.custom,
@@ -83,10 +85,11 @@ class _EditProfileViewState extends ConsumerState<EditProfileView> {
                         ? Text(user.firstName.isEmpty ? '?' : user.firstName[0])
                         : null,
                   ),
-                  TextButton(
-                    onPressed: busy ? null : selectPhoto,
-                    child: const Text('Choose profile photo'),
-                  ),
+                  if (imageUploadsEnabled)
+                    TextButton(
+                      onPressed: busy ? null : selectPhoto,
+                      child: const Text('Choose profile photo'),
+                    ),
                   for (final entry in {
                     first: 'First name',
                     last: 'Last name',

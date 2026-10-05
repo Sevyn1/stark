@@ -9,14 +9,18 @@ import 'package:stark/core/type_defs.dart';
 
 final storageRepositoryProvider = Provider(
   (ref) => StorageRepository(
-    firebaseStorage: ref.watch(storageProvider),
+    firebaseStorage: imageUploadsEnabled ? ref.watch(storageProvider) : null,
+    uploadsEnabled: imageUploadsEnabled,
   ),
 );
 
 class StorageRepository {
-  final FirebaseStorage _firebaseStorage;
-  StorageRepository({required FirebaseStorage firebaseStorage})
-      : _firebaseStorage = firebaseStorage;
+  final FirebaseStorage? _firebaseStorage;
+  final bool uploadsEnabled;
+  StorageRepository({
+    FirebaseStorage? firebaseStorage,
+    this.uploadsEnabled = false,
+  }) : _firebaseStorage = firebaseStorage;
 
   FutureEither<String> storeFile({
     required String path,
@@ -24,8 +28,10 @@ class StorageRepository {
     required File? file,
     required Uint8List? webFile,
   }) async {
+    if (!uploadsEnabled)
+      return left(Failure('Image uploads are not enabled for this workspace.'));
     try {
-      final ref = _firebaseStorage.ref().child(path).child(id);
+      final ref = _firebaseStorage!.ref().child(path).child(id);
       UploadTask uploadTask;
 
       if (webFile != null) {

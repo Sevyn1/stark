@@ -47,10 +47,44 @@ All fixture accounts use **StarkDemo123!**, a public development password for th
 - Search eligible employees, send invitations, accept/reject invitations, view members and remove an employee.
 - Create projects, assign tasks to existing workspace members, update task status, complete projects after their tasks are done and reopen completed projects.
 - Open organisation-specific daily attendance, sign employees, see present/absent and early/late totals, and retain previous days.
-- Team text messages, replies and image attachments up to 5 MB. Failed text sends retain the draft. The unfinished microphone and camera controls were replaced with working text/image actions.
-- Edit names, job title, phone and profile photo. These updates cannot overwrite account IDs, manager authority or workspace membership through the profile repository.
+- Team text messages and replies; local emulator image attachments up to 5 MB. Failed text sends retain the draft. The unfinished microphone and camera controls were replaced with working text/image actions.
+- Edit names, job title and phone; profile photos are available in local emulator mode. These updates cannot overwrite account IDs, manager authority or workspace membership through the profile repository.
 
 The demo uses the application's Firebase repositories, not a separate mock dashboard. Photo and chat uploads target the local Storage emulator. Reset and verification requests in emulator mode produce local action links; they do not send real emails.
+
+## Connect the owned Spark project
+
+The live target is `stark-282e6`. Live mode uses real Authentication and Firestore, does not seed accounts or automatically sign in, and hides image uploads. Storage clients are not instantiated by the upload repository in live mode. Initials replace missing photos. No billing upgrade is part of this setup.
+
+The checked-in client configuration was generated from the owned project. To regenerate it:
+
+```sh
+firebase login
+flutterfire configure --project=stark-282e6 --platforms=ios,android,web
+```
+
+Email/Password sign-in is enabled, and the default Standard Firestore database is in Toronto (`northamerica-northeast2`) with the free tier enabled. Reviewed rules and indexes were deployed on October 5, 2026. To deploy subsequent reviewed Firestore changes:
+
+```sh
+firebase deploy --project stark-282e6 --only firestore
+flutter run
+```
+
+`firebase.json` contains no Storage deployment. `storage.rules` denies all access if Storage is configured in the future. The recovered native configuration has been replaced with the owned project's settings.
+
+Run production-rule tests against an isolated local emulator, never the live project:
+
+```sh
+cd rules-tests
+npm ci
+cd ..
+firebase emulators:start --project demo-stark-rules --config firebase.rules-test.json --only firestore
+# In a second terminal:
+cd rules-tests
+npm test
+```
+
+The rules enforce workspace membership, immutable profile authority, atomic invitations, task assignment and text-message sender identity. Employee search uses a minimal invitation directory rather than exposing private profiles. Spark remains subject to Firebase's service quotas; live uploads are disabled because Cloud Storage requires the Blaze plan.
 
 ## Engineering changes
 
@@ -68,7 +102,7 @@ flutter build web --dart-define=LOCAL_DEMO=true --pwa-strategy=none
 
 The regression suite covers application data workflows, membership writes, duplicates, task assignment, scoped records, attendance history/idempotency, protected profile fields and message persistence. Fake Firestore tests do not simulate real transaction contention or production security rules. Browser/native verification results are recorded separately as they are completed.
 
-The `*.demo.rules` files are emulator-only convenience rules. Do not deploy them as production rules. A live build requires your own Firebase configuration and reviewed rules, permissions and indexes. No live deployment, real employee data, production authentication audit or physical-device test is claimed by the local demonstration.
+The `*.demo.rules` files are emulator-only convenience rules. Do not deploy them as production rules. A live build requires your own Firebase configuration and reviewed rules, permissions and indexes. A live client smoke check verified signup, atomic workspace creation, invitation acceptance, task completion, rejected privilege escalation and text messaging. Its temporary accounts and records were cleaned up. This is not a production authentication audit or physical-device test.
 
 Existing production-format records with the previous global project/task/attendance keys require a reviewed migration before use; the fixture migration only applies to the known local sample records. Android and desktop builds are not claimed as verified.
 

@@ -1,3 +1,4 @@
+import 'package:stark/core/providers/firebase_provider.dart';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -40,6 +41,7 @@ class _BottomChatFieldState extends ConsumerState<BottomChatField> {
   }
 
   Future<void> attach() async {
+    if (!imageUploadsEnabled) return;
     if (busy) return;
     setState(() => busy = true);
     try {
@@ -96,11 +98,12 @@ class _BottomChatFieldState extends ConsumerState<BottomChatField> {
                 onSubmitted: (_) => send(),
               ),
             ),
-            IconButton(
-              tooltip: 'Attach image',
-              onPressed: busy ? null : attach,
-              icon: const Icon(Icons.image_outlined),
-            ),
+            if (imageUploadsEnabled)
+              IconButton(
+                tooltip: 'Attach image',
+                onPressed: busy ? null : attach,
+                icon: const Icon(Icons.image_outlined),
+              ),
             IconButton(
               tooltip: 'Send message',
               onPressed: busy ? null : send,

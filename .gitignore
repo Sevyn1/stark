@@ -42,3 +42,7 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Local Node security-rule dependencies
+**/node_modules/
+.firebase/

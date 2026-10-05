@@ -1,43 +1,26 @@
 {
   "project_info": {
-    "project_number": "297200142197",
-    "project_id": "stark-ca0a8",
-    "storage_bucket": "stark-ca0a8.appspot.com"
+    "project_number": "640399048491",
+    "project_id": "stark-282e6",
+    "storage_bucket": "stark-282e6.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:297200142197:android:371caf048beb1d838a353c",
+        "mobilesdk_app_id": "1:640399048491:android:e1c04594be816cca824f6e",
         "android_client_info": {
           "package_name": "com.stark.stark"
         }
       },
-      "oauth_client": [
-        {
-          "client_id": "297200142197-kk0u0so5fnjksiin8np08nakg29kj1oe.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
+      "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDfJc__Wn7SpEGiTU5aELkJ7jfwfOphdRc"
+          "current_key": "AIzaSyCW0lSkx074M9QPdnAQZ7PIi9ILLINIk0E"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "297200142197-kk0u0so5fnjksiin8np08nakg29kj1oe.apps.googleusercontent.com",
-              "client_type": 3
-            },
-            {
-              "client_id": "297200142197-4ba2iho01ibb55jpefft66r6n1pb07mi.apps.googleusercontent.com",
-              "client_type": 2,
-              "ios_info": {
-                "bundle_id": "com.stark.stark"
-              }
-            }
-          ]
+          "other_platform_oauth_client": []
         }
       }
     }

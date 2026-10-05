@@ -23,6 +23,11 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
     if (const bool.fromEnvironment('LOCAL_DEMO')) prepareLocalEmulator();
+    final options = localDemo ? null : DefaultFirebaseOptions.currentPlatform;
+    if (options != null && options.projectId != ownedFirebaseProjectId)
+      throw StateError(
+        'Generate Firebase configuration for stark-282e6 before starting a live build.',
+      );
     await Firebase.initializeApp(
       name: localDemo ? demoAppName : null,
       options: const bool.fromEnvironment('LOCAL_DEMO')
@@ -33,7 +38,7 @@ void main() async {
               projectId: 'demo-stark',
               storageBucket: 'demo-stark.appspot.com',
             )
-          : DefaultFirebaseOptions.currentPlatform,
+          : options,
     );
     if (const bool.fromEnvironment('LOCAL_DEMO')) {
       await authService.useAuthEmulator('127.0.0.1', 9099);

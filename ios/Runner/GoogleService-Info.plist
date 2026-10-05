@@ -2,22 +2,18 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>CLIENT_ID</key>
-	<string>297200142197-4ba2iho01ibb55jpefft66r6n1pb07mi.apps.googleusercontent.com</string>
-	<key>REVERSED_CLIENT_ID</key>
-	<string>com.googleusercontent.apps.297200142197-4ba2iho01ibb55jpefft66r6n1pb07mi</string>
 	<key>API_KEY</key>
-	<string>AIzaSyC-14p-WLNHI65CwBG9zuQgz1fAyqAhMok</string>
+	<string>AIzaSyCxOwR80BgjYyDkzrC4teJSNR5SgiS_uJo</string>
 	<key>GCM_SENDER_ID</key>
-	<string>297200142197</string>
+	<string>640399048491</string>
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
 	<string>com.stark.stark</string>
 	<key>PROJECT_ID</key>
-	<string>stark-ca0a8</string>
+	<string>stark-282e6</string>
 	<key>STORAGE_BUCKET</key>
-	<string>stark-ca0a8.appspot.com</string>
+	<string>stark-282e6.firebasestorage.app</string>
 	<key>IS_ADS_ENABLED</key>
 	<false></false>
 	<key>IS_ANALYTICS_ENABLED</key>
@@ -29,6 +25,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:297200142197:ios:0ac7db89bf5e28408a353c</string>
+	<string>1:640399048491:ios:f38bc22a3dd825d7824f6e</string>
 </dict>
 </plist>

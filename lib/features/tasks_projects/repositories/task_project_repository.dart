@@ -118,7 +118,10 @@ class TaskProjectRepository {
           'employeeIds': FieldValue.arrayUnion([task.employeeId]),
           'taskIds': FieldValue.arrayUnion([task.taskName]),
         });
-        transaction.set(taskReference, task.toMap());
+        transaction.set(taskReference, {
+          ...task.toMap(),
+          'projectId': projectReference.id,
+        });
       });
       return right(null);
     } catch (e) {

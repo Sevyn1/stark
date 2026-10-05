@@ -1,0 +1,145 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signed() { return request.auth != null; }
+    function userPath(uid) { return /databases/$(database)/documents/users/$(uid); }
+    function orgPath(org) { return /databases/$(database)/documents/organisations/$(org); }
+    function invitePath(uid) { return /databases/$(database)/documents/invites/$(uid); }
+    function me() { return get(userPath(request.auth.uid)).data; }
+    function manager(org) { return signed() && org is string && org != '' && get(orgPath(org)).data.managers.hasAny([request.auth.uid]); }
+    function member(org) { return manager(org) || (signed() && org != '' && me().organisation == org && get(orgPath(org)).data.employees.hasAny([request.auth.uid])); }
+    function only(keys) { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys); }
+    function pendingOwn(org) { return signed() && get(invitePath(request.auth.uid)).data.organisationName == org && get(invitePath(request.auth.uid)).data.status == 'pending'; }
+    function validProfile(d, uid) {
+      return d.keys().hasOnly(['uid','firstName','lastName','profilePic','email','isAdmin','organisation','role','phone'])
+        && d.uid == uid && d.firstName is string && d.firstName.size() > 0 && d.firstName.size() <= 100
+        && d.lastName is string && d.lastName.size() > 0 && d.lastName.size() <= 100
+        && d.email is string && d.isAdmin is bool && d.organisation is string
+        && d.role is string && d.role.size() <= 100 && d.phone is string && d.phone.size() <= 40
+        && d.profilePic == '';
+    }
+    function joiningOwnProfile(uid) {
+      let org = request.resource.data.organisation;
+      return signed() && request.auth.uid == uid && only(['organisation']) && resource.data.organisation == ''
+        && ((resource.data.isAdmin && getAfter(orgPath(org)).data.managers == [uid])
+          || (!resource.data.isAdmin && pendingOwn(org) && getAfter(invitePath(uid)).data.status == 'accepted'
+            && getAfter(orgPath(org)).data.employees.hasAny([uid])));
+    }
+    match /users/{uid} {
+      allow get: if signed() && (request.auth.uid == uid || member(resource.data.organisation));
+      allow list: if signed() && member(resource.data.organisation);
+      // Users may register as a manager of a NEW workspace; this grants no access to existing workspaces.
+      allow create: if signed() && request.auth.uid == uid && validProfile(request.resource.data,uid)
+        && request.resource.data.email == request.auth.token.email && request.resource.data.organisation == '';
+      allow update: if validProfile(request.resource.data,uid) && (
+        (signed() && request.auth.uid == uid && only(['firstName','lastName','phone','role','profilePic']))
+        || joiningOwnProfile(uid)
+        || (manager(resource.data.organisation) && request.resource.data.organisation == '' && only(['organisation'])
+          && !getAfter(orgPath(resource.data.organisation)).data.employees.hasAny([uid])));
+      allow delete: if false;
+    }
+    match /employeeDirectory/{uid} {
+      function validEntry() {
+        let u = getAfter(userPath(uid)).data;
+        return request.resource.data.keys().hasOnly(['uid','firstName','lastName','email','isAdmin','organisation'])
+          && request.resource.data.uid == uid && request.resource.data.firstName == u.firstName
+          && request.resource.data.lastName == u.lastName && request.resource.data.email == u.email
+          && request.resource.data.isAdmin == false && request.resource.data.organisation == ''
+          && u.isAdmin == false && u.organisation == '';
+      }
+      allow read: if signed() && me().isAdmin == true;
+      allow create, update: if signed() && validEntry() && (request.auth.uid == uid || manager(get(userPath(uid)).data.organisation));
+      allow delete: if signed() && (request.auth.uid == uid || manager(get(userPath(uid)).data.organisation));
+    }
+    match /organisations/{org} {
+      allow get: if signed() && !exists(orgPath(org)) && me().isAdmin == true && me().organisation == '';
+      allow get, list: if signed() && (resource.data.managers.hasAny([request.auth.uid]) || resource.data.employees.hasAny([request.auth.uid]));
+      allow create: if signed() && me().isAdmin == true && me().organisation == ''
+        && request.resource.data.name == org && request.resource.data.id == org
+        && request.resource.data.managers == [request.auth.uid] && request.resource.data.employees == []
+        && request.resource.data.prospectiveEmployees == [] && getAfter(userPath(request.auth.uid)).data.organisation == org;
+      allow update: if (manager(org) && only(['employees','prospectiveEmployees','description']))
+        || (pendingOwn(org) && only(['employees','prospectiveEmployees'])
+          && request.resource.data.prospectiveEmployees == resource.data.prospectiveEmployees.removeAll([request.auth.uid])
+          && ((existsAfter(invitePath(request.auth.uid)) && getAfter(invitePath(request.auth.uid)).data.status == 'accepted'
+            && !resource.data.employees.hasAny([request.auth.uid])
+            && request.resource.data.employees.hasAll(resource.data.employees)
+            && request.resource.data.employees.hasAny([request.auth.uid])
+            && request.resource.data.employees.size() == resource.data.employees.size()+1
+            && getAfter(userPath(request.auth.uid)).data.organisation == org)
+          || (request.resource.data.employees == resource.data.employees && !existsAfter(invitePath(request.auth.uid)))));
+      allow delete: if false;
+    }
+    match /invites/{uid} {
+      allow get: if signed() && !exists(invitePath(uid)) && (uid == request.auth.uid || manager(me().organisation));
+      allow read: if signed() && (request.auth.uid == uid || resource.data.managerId == request.auth.uid);
+      allow create: if manager(request.resource.data.organisationName) && request.resource.data.managerId == request.auth.uid
+        && request.resource.data.receiverId == uid && request.resource.data.status == 'pending'
+        && get(userPath(uid)).data.isAdmin == false && get(userPath(uid)).data.organisation == '';
+      allow update: if signed() && request.auth.uid == uid && resource.data.status == 'pending'
+        && only(['status','actionAt']) && request.resource.data.status == 'accepted'
+        && getAfter(userPath(uid)).data.organisation == resource.data.organisationName;
+      allow delete: if signed() && ((!exists(invitePath(uid)) && manager(me().organisation))
+        || (request.auth.uid == uid && resource.data.status == 'pending') || manager(resource.data.organisationName));
+    }
+    match /projects/{id} {
+      allow get: if signed() && !exists(/databases/$(database)/documents/projects/$(id)) && member(me().organisation);
+      allow read: if member(resource.data.organisationName);
+      allow create: if manager(request.resource.data.organisationName) && request.resource.data.managerId == request.auth.uid
+        && request.resource.data.status == 'ongoing' && request.resource.data.name is string
+        && request.resource.data.employeeIds.hasOnly(get(orgPath(request.resource.data.organisationName)).data.employees)
+        && request.resource.data.keys().hasOnly(['organisationName','managerId','name','employeeIds','taskIds','status','type','endDateTime','startDateTime']);
+      allow update: if manager(resource.data.organisationName) && only(['status','employeeIds','taskIds'])
+        && request.resource.data.status in ['ongoing','done']
+        && request.resource.data.employeeIds.hasOnly(get(orgPath(resource.data.organisationName)).data.employees);
+      allow delete: if false;
+    }
+    match /tasks/{id} {
+      allow get: if signed() && !exists(/databases/$(database)/documents/tasks/$(id)) && member(me().organisation);
+      allow read: if member(resource.data.organisationName);
+      allow create: if manager(request.resource.data.organisationName) && request.resource.data.managerId == request.auth.uid
+        && get(userPath(request.resource.data.employeeId)).data.organisation == request.resource.data.organisationName
+        && get(orgPath(request.resource.data.organisationName)).data.employees.hasAny([request.resource.data.employeeId])
+        && request.resource.data.status == 'ongoing'
+        && request.resource.data.projectId is string
+        && get(/databases/$(database)/documents/projects/$(request.resource.data.projectId)).data.organisationName == request.resource.data.organisationName
+        && get(/databases/$(database)/documents/projects/$(request.resource.data.projectId)).data.managerId == request.auth.uid
+        && request.resource.data.keys().hasOnly(['taskName','projectName','projectId','employeeId','description','organisationName','status','managerId']);
+      allow update: if member(resource.data.organisationName) && only(['status'])
+        && request.resource.data.status in ['ongoing','done']
+        && (manager(resource.data.organisationName) || resource.data.employeeId == request.auth.uid);
+      allow delete: if false;
+    }
+    match /attendanceRecords/{id} {
+      allow get: if signed() && !exists(/databases/$(database)/documents/attendanceRecords/$(id)) && member(me().organisation);
+      allow read: if member(resource.data.organisationName);
+      allow create: if manager(request.resource.data.organisationName);
+      allow update: if manager(resource.data.organisationName) && only(['present','absent','early','late']);
+      allow delete: if false;
+    }
+    match /attendance/{id} {
+      allow read: if member(resource.data.organisationName);
+      allow create: if manager(request.resource.data.organisationName)
+        && get(orgPath(request.resource.data.organisationName)).data.employees.hasAny([request.resource.data.employeeId]);
+      allow update: if manager(resource.data.organisationName) && only(['status','timeIn']);
+      allow delete: if false;
+    }
+    match /messageGroup/{org} {
+      allow read: if member(org);
+      allow create: if signed() && getAfter(orgPath(org)).data.managers.hasAny([request.auth.uid]);
+      allow update: if manager(org) || (pendingOwn(org) && only(['membersUid'])
+        && getAfter(invitePath(request.auth.uid)).data.status == 'accepted'
+        && request.resource.data.membersUid.hasAll(resource.data.membersUid)
+        && request.resource.data.membersUid.hasAny([request.auth.uid])
+        && request.resource.data.membersUid.size() == resource.data.membersUid.size()+1);
+      allow delete: if false;
+      match /messages/{id} {
+        allow read: if member(org);
+        allow create: if member(org) && request.resource.data.senderId == request.auth.uid
+          && request.resource.data.recieverid == org && request.resource.data.type == 'text'
+          && request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 5000;
+        allow update, delete: if false;
+      }
+    }
+  }
+}

@@ -14,16 +14,20 @@ Future<void> seedLocalDemo() async {
   Future<String> account(String email) async {
     try {
       return (await auth.signInWithEmailAndPassword(
-              email: email, password: demoPassword))
-          .user!
-          .uid;
+        email: email,
+        password: demoPassword,
+      )).user!.uid;
     } on FirebaseAuthException catch (e) {
-      if (!['user-not-found', 'invalid-credential', 'invalid-login-credentials']
-          .contains(e.code)) rethrow;
+      if (![
+        'user-not-found',
+        'invalid-credential',
+        'invalid-login-credentials',
+      ].contains(e.code))
+        rethrow;
       return (await auth.createUserWithEmailAndPassword(
-              email: email, password: demoPassword))
-          .user!
-          .uid;
+        email: email,
+        password: demoPassword,
+      )).user!.uid;
     }
   }
 
@@ -35,7 +39,13 @@ Future<void> seedLocalDemo() async {
   final existingOrg = await orgRef.get();
   final batch = db.batch();
   Future<void> profile(
-      String uid, String first, String last, String email, bool admin, {String organisation = 'Stark Demo Studio'}) async {
+    String uid,
+    String first,
+    String last,
+    String email,
+    bool admin, {
+    String organisation = 'Stark Demo Studio',
+  }) async {
     final ref = db.collection('users').doc(uid);
     if ((await ref.get()).exists) return;
     batch.set(ref, {
@@ -47,15 +57,27 @@ Future<void> seedLocalDemo() async {
       'isAdmin': admin,
       'organisation': organisation,
       'role': admin ? 'Manager' : 'Developer',
-      'phone': ''
+      'phone': '',
     });
   }
 
   await profile(manager, 'Alex', 'Morgan', demoManagerEmail, true);
   await profile(jamie, 'Jamie', 'Lee', demoEmployeeEmail, false);
   await profile(
-      taylor, 'Taylor', 'Rivera', 'taylor.employee@example.test', false);
-  await profile(sam, 'Sam', 'Reed', 'sam.invitee@example.test', false, organisation: '');
+    taylor,
+    'Taylor',
+    'Rivera',
+    'taylor.employee@example.test',
+    false,
+  );
+  await profile(
+    sam,
+    'Sam',
+    'Reed',
+    'sam.invitee@example.test',
+    false,
+    organisation: '',
+  );
   if (!existingOrg.exists) {
     batch.set(orgRef, {
       'id': 'stark-demo',
@@ -65,7 +87,7 @@ Future<void> seedLocalDemo() async {
       'managers': [manager],
       'employees': [jamie, taylor],
       'prospectiveEmployees': [],
-      'fixtureVersion': 2
+      'fixtureVersion': 2,
     });
   } else if (existingOrg.data()?['fixtureVersion'] != 2) {
     // Migrate only the two known placeholder employees from the initial preview.
@@ -74,13 +96,19 @@ Future<void> seedLocalDemo() async {
     batch.update(orgRef, {
       'managers': [manager],
       'employees': [jamie, taylor],
-      'fixtureVersion': 2
+      'fixtureVersion': 2,
     });
   }
-  final projectRef = db.collection('projects').doc(
-      '${Uri.encodeComponent('Stark Demo Studio')}::${Uri.encodeComponent('Customer Portal')}');
-  final taskRef = db.collection('tasks').doc(
-      '${Uri.encodeComponent('Stark Demo Studio')}::${Uri.encodeComponent('Review API validation')}');
+  final projectRef = db
+      .collection('projects')
+      .doc(
+        '${Uri.encodeComponent('Stark Demo Studio')}::${Uri.encodeComponent('Customer Portal')}',
+      );
+  final taskRef = db
+      .collection('tasks')
+      .doc(
+        '${Uri.encodeComponent('Stark Demo Studio')}::${Uri.encodeComponent('Review API validation')}',
+      );
   final project = await projectRef.get();
   final now = DateTime.now();
   // Retire only the two original preview records after moving to scoped IDs.
@@ -95,9 +123,10 @@ Future<void> seedLocalDemo() async {
       'taskIds': ['Review API validation'],
       'status': 'ongoing',
       'type': 'Development',
-      'startDateTime':
-          now.subtract(const Duration(days: 3)).millisecondsSinceEpoch,
-      'endDateTime': now.add(const Duration(days: 14)).millisecondsSinceEpoch
+      'startDateTime': now
+          .subtract(const Duration(days: 3))
+          .millisecondsSinceEpoch,
+      'endDateTime': now.add(const Duration(days: 14)).millisecondsSinceEpoch,
     });
     batch.set(taskRef, {
       'taskName': 'Review API validation',
@@ -106,22 +135,31 @@ Future<void> seedLocalDemo() async {
       'description': 'Check request validation and error handling.',
       'organisationName': 'Stark Demo Studio',
       'status': 'ongoing',
-      'managerId': manager
+      'managerId': manager,
     });
   }
-  batch.set(
-      db.collection('messageGroup').doc('Stark Demo Studio'),
-      {
-        'senderId': manager,
-        'name': 'Stark Demo Studio',
-        'groupId': 'Stark Demo Studio',
-        'lastMessage': '',
-        'groupPic': '',
-        'membersUid': FieldValue.arrayUnion([manager, jamie, taylor]),
-        'timeSent': now.millisecondsSinceEpoch,
-      },
-      SetOptions(merge: true));
+  batch.set(db.collection('messageGroup').doc('Stark Demo Studio'), {
+    'senderId': manager,
+    'name': 'Stark Demo Studio',
+    'groupId': 'Stark Demo Studio',
+    'lastMessage': '',
+    'groupPic': '',
+    'membersUid': FieldValue.arrayUnion([manager, jamie, taylor]),
+    'timeSent': now.millisecondsSinceEpoch,
+  }, SetOptions(merge: true));
+  final samProfile = await db.collection('users').doc(sam).get();
+  if (samProfile.data()?['organisation'] == '' || !samProfile.exists)
+    batch.set(db.collection('employeeDirectory').doc(sam), {
+      'uid': sam,
+      'firstName': 'Sam',
+      'lastName': 'Reed',
+      'email': 'sam.invitee@example.test',
+      'isAdmin': false,
+      'organisation': '',
+    });
   await batch.commit();
   await auth.signInWithEmailAndPassword(
-      email: demoManagerEmail, password: demoPassword);
+    email: demoManagerEmail,
+    password: demoPassword,
+  );
 }

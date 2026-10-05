@@ -14,17 +14,31 @@ final userProfileRepositoryProvider = Provider((ref) {
 class UserProfileRepository {
   final FirebaseFirestore _firestore;
   UserProfileRepository({required FirebaseFirestore firestore})
-      : _firestore = firestore;
+    : _firestore = firestore;
 
   FutureVoid editProfile(UserModel user) async {
     try {
-      await _users.doc(user.uid).update({
+      final reference = _users.doc(user.uid);
+      final snapshot = await reference.get();
+      final original = snapshot.data() as Map<String, dynamic>;
+      final batch = _firestore.batch();
+      batch.update(reference, {
         'firstName': user.firstName.trim(),
         'lastName': user.lastName.trim(),
         'phone': user.phone.trim(),
         'profilePic': user.profilePic,
-        'role': user.role.trim()
+        'role': user.role.trim(),
       });
+      if (original['isAdmin'] == false && original['organisation'] == '')
+        batch.set(_firestore.collection('employeeDirectory').doc(user.uid), {
+          'uid': user.uid,
+          'firstName': user.firstName.trim(),
+          'lastName': user.lastName.trim(),
+          'email': original['email'],
+          'isAdmin': false,
+          'organisation': '',
+        });
+      await batch.commit();
       return right(null);
     } on FirebaseException catch (e) {
       return left(Failure(e.message ?? e.code));
