@@ -55,30 +55,56 @@ class MessagingRepository {
     required String senderProfilePic,
   }) async {
     try {
+      if (text.trim().isEmpty) throw ArgumentError('Enter a message.');
+      if (orgName.isEmpty || _auth.currentUser == null)
+        throw StateError('Join an organisation before messaging.');
       var timeSent = DateTime.now();
       var messageId = const Uuid().v1();
 
-      return right(
-        _saveMessageToMessageSubcollection(
-          orgName: orgName,
-          text: text,
-          timeSent: timeSent,
-          messageId: messageId,
-          messageType: MessageEnum.text,
-          messageReply: messageReply,
-          senderUsername: senderUserName,
-          recieverUserName: orgName,
-          senderProfilePic: senderProfilePic,
-        ),
+      await _saveMessageToMessageSubcollection(
+        orgName: orgName,
+        text: text.trim(),
+        timeSent: timeSent,
+        messageId: messageId,
+        messageType: MessageEnum.text,
+        messageReply: messageReply,
+        senderUsername: senderUserName,
+        recieverUserName: orgName,
+        senderProfilePic: senderProfilePic,
       );
+      return right(null);
     } on FirebaseException catch (e) {
-      throw e.message!;
+      return left(Failure(e.message ?? e.code));
     } catch (e) {
       return left(Failure(e.toString()));
     }
   }
 
-  void _saveMessageToMessageSubcollection({
+  FutureVoid sendImageMessage(
+      {required String url,
+      required String orgName,
+      required String senderUsername,
+      required String senderProfilePic}) async {
+    try {
+      if (orgName.isEmpty || _auth.currentUser == null)
+        throw StateError('Join an organisation before messaging.');
+      await _saveMessageToMessageSubcollection(
+          orgName: orgName,
+          text: url,
+          timeSent: DateTime.now(),
+          messageId: const Uuid().v4(),
+          messageType: MessageEnum.image,
+          messageReply: null,
+          senderUsername: senderUsername,
+          recieverUserName: orgName,
+          senderProfilePic: senderProfilePic);
+      return right(null);
+    } catch (e) {
+      return left(Failure(e.toString()));
+    }
+  }
+
+  Future<void> _saveMessageToMessageSubcollection({
     required String orgName,
     required String text,
     required DateTime timeSent,

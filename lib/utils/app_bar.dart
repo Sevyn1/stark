@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:hidden_drawer_menu/hidden_drawer_menu.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:stark/theme/stark_icons.dart';
 import 'package:stark/theme/palette.dart';
 import 'package:stark/utils/string_extensions.dart';
 import 'package:stark/utils/widget_extensions.dart';
@@ -44,13 +44,14 @@ class MyAppBar extends ConsumerWidget implements PreferredSizeWidget {
       ),
       actions: [
         Icon(
-          PhosphorIcons.bell,
+          StarkIcons.bell,
           size: 28.sp,
         ),
         11.sbW,
         CircleAvatar(
           radius: 16.w,
-          backgroundImage: NetworkImage(user.profilePic),
+          child: user.profilePic.isEmpty ? Text(user.firstName.isEmpty ? '?' : user.firstName[0].toUpperCase()) : null,
+          backgroundImage: user.profilePic.isEmpty ? null : NetworkImage(user.profilePic),
         ),
         20.sbW,
       ],

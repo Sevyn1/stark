@@ -4,14 +4,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fpdart/fpdart.dart';
-import 'package:routemaster/routemaster.dart';
+import 'package:stark/core/app_navigation.dart';
 import 'package:stark/core/failure.dart';
 import 'package:stark/features/auth/repositories/auth_repository.dart';
 import 'package:stark/features/auth/views/new.dart';
 import 'package:stark/models/user_model.dart';
 
 import '../../../utils/snack_bar.dart';
-
 
 //! provider to generate user model from ID
 final getUserProvider = StreamProvider.family((ref, String uid) {
@@ -72,9 +71,8 @@ class AuthController extends StateNotifier<bool> {
     state = false;
     res.fold((l) {
       log(l.message);
-      showSnackBar(context, l.message);
+      if (context.mounted) showSnackBar(context, l.message);
     }, (userModel) {
-      Routemaster.of(context).pop();
       _ref.read(userProvider.notifier).update((state) => userM = userModel);
     });
   }
@@ -94,9 +92,8 @@ class AuthController extends StateNotifier<bool> {
     state = false;
     res.fold((l) {
       log(l.message);
-      showSnackBar(context, l.message);
+      if (context.mounted) showSnackBar(context, l.message);
     }, (userModel) {
-      Routemaster.of(context).pop();
       _ref.read(userProvider.notifier).update((state) => userM = userModel);
     });
   }
@@ -107,8 +104,8 @@ class AuthController extends StateNotifier<bool> {
   }
 
   //! log out user
-  void logOut() async {
-    _ref.read(userProvider.notifier).update((state) => null);
-    _authRepository.logOut();
+  Future<void> logOut() async {
+    await _authRepository.logOut();
+    _ref.read(userProvider.notifier).state = null;
   }
 }

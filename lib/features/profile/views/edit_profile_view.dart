@@ -1,256 +1,132 @@
-import 'dart:io';
-
+import 'dart:typed_data';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:stark/core/utils.dart';
 import 'package:stark/features/auth/controllers/auth_controller.dart';
-import 'package:stark/features/profile/comtrollers/profile_controller.dart';
-import 'package:stark/theme/palette.dart';
-import 'package:stark/utils/button.dart';
-import 'package:stark/utils/error_text.dart';
-import 'package:stark/utils/loader.dart';
-import 'package:stark/utils/text_input.dart';
-import 'package:stark/utils/widget_extensions.dart';
+import 'package:stark/utils/snack_bar.dart';
+import '../comtrollers/profile_controller.dart';
 
 class EditProfileView extends ConsumerStatefulWidget {
   const EditProfileView({super.key});
-
   @override
-  ConsumerState<ConsumerStatefulWidget> createState() =>
-      _EditProfileViewState();
+  ConsumerState<EditProfileView> createState() => _EditProfileViewState();
 }
 
 class _EditProfileViewState extends ConsumerState<EditProfileView> {
-  final TextEditingController _roleController = TextEditingController();
-  final TextEditingController _firstNameController = TextEditingController();
-
-  final TextEditingController _lastNameController = TextEditingController();
-  final TextEditingController _phoneController = TextEditingController();
-  File? profileFile;
-
-  void selectProfileImage() async {
-    final res = await pickImage();
-
-    if (res != null) {
-      setState(() {
-        profileFile = File(res.files.first.path!);
-      });
-    }
+  final form = GlobalKey<FormState>();
+  final first = TextEditingController(),
+      last = TextEditingController(),
+      role = TextEditingController(),
+      phone = TextEditingController();
+  Uint8List? photo;
+  @override
+  void initState() {
+    super.initState();
+    final u = ref.read(userProvider)!;
+    first.text = u.firstName;
+    last.text = u.lastName;
+    role.text = u.role;
+    phone.text = u.phone;
   }
 
-  void save() {
-    ref.read(userProfileControllerProvider.notifier).editUserProfile(
-          context: context,
-          profileFile: profileFile,
-          firstName: _firstNameController.text,
-          lastName: _lastNameController.text,
-          role: _roleController.text,
-          phone: _phoneController.text,
-        );
+  @override
+  void dispose() {
+    for (final c in [first, last, role, phone]) c.dispose();
+    super.dispose();
+  }
+
+  Future<void> selectPhoto() async {
+    try {
+      final selection = await FilePicker.pickFile(
+        type: FileType.custom,
+        allowedExtensions: ['png', 'jpg', 'jpeg', 'webp'],
+      );
+      if (selection == null) return;
+      final image = selection;
+      final size = await image.length();
+      if (size == null || size > 5 * 1024 * 1024) {
+        if (mounted)
+          showSnackBar(context, 'Choose an image smaller than 5 MB.');
+        return;
+      }
+      final bytes = await image.readAsBytes();
+      if (bytes.length > 5 * 1024 * 1024) throw StateError("Image too large");
+      if (mounted) setState(() => photo = bytes);
+    } catch (_) {
+      if (mounted) showSnackBar(context, 'Unable to select that image.');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isLoading = ref.watch(userProfileControllerProvider);
-    final user = ref.watch(userProvider)!;
-    
+    final busy = ref.watch(userProfileControllerProvider),
+        user = ref.watch(userProvider)!;
     return Scaffold(
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Pallete.profileGreen.withOpacity(0.3),
-        foregroundColor: Pallete.blackTint,
-        title: Text(
-          'My Profile',
-          style: TextStyle(
-              color: Pallete.blackish,
-              fontSize: 22.sp,
-              fontWeight: FontWeight.bold),
-        ),
-      ),
-      body: SingleChildScrollView(
-        physics: const ClampingScrollPhysics(),
-        child: Container(
-          height: MediaQuery.of(context).size.height,
-          width: MediaQuery.of(context).size.width,
-          color: Pallete.profileGreen.withOpacity(0.3),
-          child: isLoading
-              ? const Loader()
-              : Column(
-                  children: [
-                    70.sbH,
-                    Expanded(
-                      child: ref.watch(getUserProvider(user.uid)).when(
-                            data: (userr) {
-                              // _firstNameController =
-                              //     TextEditingController(text: userr.firstName);
-                              // _lastNameController =
-                              //     TextEditingController(text: userr.lastName);
-                              //     _roleController =
-                              //     TextEditingController(text: userr.role);
-                              //     _phoneController =
-                              //     TextEditingController(text: userr.phone);
-                              return Container(
-                                width: MediaQuery.of(context).size.width,
-                                padding: EdgeInsets.symmetric(horizontal: 24.w)
-                                    .copyWith(top: 16.h),
-                                decoration: BoxDecoration(
-                                  color: Pallete.whiteColor,
-                                  borderRadius: BorderRadius.only(
-                                    topLeft: Radius.circular(50.r),
-                                    topRight: Radius.circular(50.r),
-                                  ),
-                                ),
-                                child: Column(
-                                  children: [
-                                    SizedBox(
-                                      height: 101.h,
-                                      width: 101.w,
-                                      child: Stack(
-                                        children: [
-                                          profileFile != null
-                                              ? CircleAvatar(
-                                                  backgroundImage:
-                                                      FileImage(profileFile!),
-                                                  radius: 50.w,
-                                                )
-                                              : CircleAvatar(
-                                                  radius: 50.w,
-                                                  backgroundColor:
-                                                      Pallete.greey,
-                                                  backgroundImage: NetworkImage(
-                                                      userr.profilePic),
-                                                ),
-                                          Positioned(
-                                            right: 0,
-                                            bottom: 0,
-                                            child: BButton(
-                                              onTap: selectProfileImage,
-                                              height: 25.h,
-                                              width: 25.h,
-                                              radius: 3.r,
-                                              isText: false,
-                                              item: Icon(
-                                                PhosphorIcons.penFill,
-                                                size: 15.sp,
-                                              ),
-                                              color: Pallete.primaryGreen,
-                                            ),
-                                          )
-                                        ],
-                                      ),
-                                    ),
-                                    10.sbH,
-                                    Text(
-                                      userr.email,
-                                      style: TextStyle(
-                                          color: Pallete.blackish,
-                                          fontSize: 15.sp,
-                                          fontWeight: FontWeight.w700),
-                                    ),
-
-                                    25.sbH,
-                                    Align(
-                                      alignment: Alignment.centerLeft,
-                                      child: Text(
-                                        'First Name',
-                                        style: TextStyle(
-                                            color: Pallete.blackish,
-                                            fontSize: 18.sp,
-                                            fontWeight: FontWeight.w700),
-                                      ),
-                                    ),
-                                    6.sbH,
-                                    //! first name input
-                                    TextInputBoxx(
-                                      height: 47.h,
-                                      hintText: userr.firstName,
-                                      controller: _firstNameController,
-                                      icon:
-                                          const Icon(PhosphorIcons.personThin),
-                                    ),
-                                    16.sbH,
-
-                                    //!
-                                    Align(
-                                      alignment: Alignment.centerLeft,
-                                      child: Text(
-                                        'Last Name',
-                                        style: TextStyle(
-                                            color: Pallete.blackish,
-                                            fontSize: 18.sp,
-                                            fontWeight: FontWeight.w700),
-                                      ),
-                                    ),
-                                    6.sbH,
-                                    //! last name input
-                                    TextInputBoxx(
-                                      height: 47.h,
-                                      hintText: userr.lastName,
-                                      controller: _lastNameController,
-                                      icon:
-                                          const Icon(PhosphorIcons.personThin),
-                                    ),
-                                    16.sbH,
-
-                                    //! role
-                                    Align(
-                                      alignment: Alignment.centerLeft,
-                                      child: Text(
-                                        'Role',
-                                        style: TextStyle(
-                                            color: Pallete.blackish,
-                                            fontSize: 18.sp,
-                                            fontWeight: FontWeight.w700),
-                                      ),
-                                    ),
-                                    6.sbH,
-                                    TextInputBoxx(
-                                      height: 47.h,
-                                      hintText: userr.role,
-                                      controller: _roleController,
-                                      icon: const Icon(PhosphorIcons.gearThin),
-                                    ),
-                                    16.sbH,
-
-                                    //! phone input
-                                    Align(
-                                      alignment: Alignment.centerLeft,
-                                      child: Text(
-                                        'Phone',
-                                        style: TextStyle(
-                                            color: Pallete.blackish,
-                                            fontSize: 18.sp,
-                                            fontWeight: FontWeight.w700),
-                                      ),
-                                    ),
-                                    6.sbH,
-                                    TextInputBoxx(
-                                      height: 47.h,
-                                      hintText: userr.phone,
-                                      controller: _phoneController,
-                                      icon: const Icon(
-                                          PhosphorIcons.phoneCallThin),
-                                    ),
-
-                                    50.sbH,
-                                    BButton(
-                                      onTap: save,
-                                      height: 50.h,
-                                      text: 'Save',
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                            error: (error, stactrace) =>
-                                ErrorText(error: error.toString()),
-                            loading: () => const Loader(),
-                          ),
+      appBar: AppBar(title: const Text('Edit profile')),
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 430),
+            child: Form(
+              key: form,
+              child: Column(
+                children: [
+                  CircleAvatar(
+                    radius: 45,
+                    backgroundImage: photo != null
+                        ? MemoryImage(photo!)
+                        : user.profilePic.isNotEmpty
+                        ? NetworkImage(user.profilePic) as ImageProvider
+                        : null,
+                    child: photo == null && user.profilePic.isEmpty
+                        ? Text(user.firstName.isEmpty ? '?' : user.firstName[0])
+                        : null,
+                  ),
+                  TextButton(
+                    onPressed: busy ? null : selectPhoto,
+                    child: const Text('Choose profile photo'),
+                  ),
+                  for (final entry in {
+                    first: 'First name',
+                    last: 'Last name',
+                    role: 'Job title',
+                    phone: 'Phone',
+                  }.entries)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 18),
+                      child: TextFormField(
+                        controller: entry.key,
+                        decoration: InputDecoration(labelText: entry.value),
+                        validator: (s) =>
+                            [first, last].contains(entry.key) &&
+                                (s == null || s.trim().isEmpty)
+                            ? 'This name is required'
+                            : null,
+                      ),
                     ),
-                  ],
-                ),
+                  ElevatedButton(
+                    onPressed: busy
+                        ? null
+                        : () {
+                            if (form.currentState!.validate())
+                              ref
+                                  .read(userProfileControllerProvider.notifier)
+                                  .editUserProfile(
+                                    context: context,
+                                    profileBytes: photo,
+                                    firstName: first.text,
+                                    lastName: last.text,
+                                    role: role.text,
+                                    phone: phone.text,
+                                  );
+                          },
+                    child: Text(busy ? 'Saving…' : 'Save profile'),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );

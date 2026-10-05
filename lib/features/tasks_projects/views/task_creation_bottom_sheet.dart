@@ -6,8 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:routemaster/routemaster.dart';
+import 'package:stark/theme/stark_icons.dart';
+import 'package:stark/core/app_navigation.dart';
 
 import 'package:stark/features/auth/controllers/auth_controller.dart';
 import 'package:stark/features/employee/controllers/employee_controller.dart';
@@ -23,10 +23,7 @@ import 'package:stark/utils/widget_extensions.dart';
 
 class TaskCreationBottomSheet extends ConsumerStatefulWidget {
   final String projectName;
-  const TaskCreationBottomSheet({
-    super.key,
-    required this.projectName,
-  });
+  const TaskCreationBottomSheet({super.key, required this.projectName});
 
   @override
   ConsumerState<ConsumerStatefulWidget> createState() =>
@@ -46,17 +43,25 @@ class _TaskCreationBottomSheetState
     final isLoading = ref.watch(taskProjectControllerProvider);
 
     return AnimatedContainer(
+      height: (MediaQuery.of(context).size.height - MediaQuery.of(context).viewInsets.bottom - 70).clamp(180.0, double.infinity).toDouble(),
       duration: const Duration(milliseconds: 2500),
       padding: EdgeInsets.symmetric(horizontal: 20.w).copyWith(top: 15.h),
       width: double.infinity,
       decoration: BoxDecoration(
         color: Pallete.whiteColor,
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(30.r),
-        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(30.r)),
       ),
       child: employeesStream.when(
         data: (employees) {
+          if (employees.isEmpty)
+            return const Padding(
+              padding: EdgeInsets.all(24),
+              child: Text(
+                'Add an employee to the organisation before assigning tasks.',
+              ),
+            );
+          if (selectedEmployeeIndex.value >= employees.length)
+            selectedEmployeeIndex.value = 0;
           selectedEmployeeId.value = employees[selectedEmployeeIndex.value].uid;
           return SingleChildScrollView(
             child: Column(
@@ -73,22 +78,20 @@ class _TaskCreationBottomSheetState
                         Text(
                           'Create Task',
                           style: TextStyle(
-                              color: Pallete.blackTint,
-                              fontSize: 14.sp,
-                              fontWeight: FontWeight.w600),
+                            color: Pallete.blackTint,
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ],
                     ),
                     InkWell(
-                      onTap: () => Routemaster.of(context).pop(),
+                      onTap: () => AppNavigator.of(context).pop(),
                       child: Container(
                         color: Colors.transparent,
                         height: 24.h,
                         width: 24.w,
-                        child: Icon(
-                          PhosphorIcons.x,
-                          size: 20.sp,
-                        ),
+                        child: Icon(StarkIcons.x, size: 20.sp),
                       ),
                     ),
                   ],
@@ -104,18 +107,20 @@ class _TaskCreationBottomSheetState
                         child: Text(
                           'Project: ',
                           style: TextStyle(
-                              color: Pallete.blackTint,
-                              fontSize: 16.sp,
-                              fontWeight: FontWeight.w500),
+                            color: Pallete.blackTint,
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
                       12.sbH,
                       Text(
                         widget.projectName,
                         style: TextStyle(
-                            color: Pallete.blackTint,
-                            fontSize: 18.sp,
-                            fontWeight: FontWeight.w800),
+                          color: Pallete.blackTint,
+                          fontSize: 18.sp,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ],
                   ),
@@ -128,9 +133,10 @@ class _TaskCreationBottomSheetState
                   child: Text(
                     'Select Employee',
                     style: TextStyle(
-                        color: Pallete.blackTint,
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.w500),
+                      color: Pallete.blackTint,
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
                 12.sbH,
@@ -144,7 +150,8 @@ class _TaskCreationBottomSheetState
                         context,
                         CupertinoPicker(
                           scrollController: FixedExtentScrollController(
-                              initialItem: selectedEmployeeIndex.value),
+                            initialItem: selectedEmployeeIndex.value,
+                          ),
                           magnification: 1,
                           squeeze: 1.2,
                           useMagnifier: false,
@@ -163,14 +170,17 @@ class _TaskCreationBottomSheetState
                             (index) => Text(
                               '${employees[index].firstName} ${employees[index].lastName}',
                               style: const TextStyle(
-                                  overflow: TextOverflow.ellipsis),
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
                           ),
                         ),
                       ),
                       child: Container(
                         padding: EdgeInsets.symmetric(
-                            horizontal: 7.w, vertical: 10.h),
+                          horizontal: 7.w,
+                          vertical: 10.h,
+                        ),
                         decoration: BoxDecoration(
                           color: Pallete.blueColor,
                           borderRadius: BorderRadius.circular(5.r),
@@ -206,9 +216,10 @@ class _TaskCreationBottomSheetState
                   child: Text(
                     'Task Name',
                     style: TextStyle(
-                        color: Pallete.blackTint,
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.w500),
+                      color: Pallete.blackTint,
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
                 12.sbH,
@@ -223,24 +234,25 @@ class _TaskCreationBottomSheetState
                   //       selection: _nameController.selection);
                   // },
                   decoration: InputDecoration(
-                      hintText: 'Task Name',
-                      hintStyle: TextStyle(fontSize: 15.sp),
-                      filled: true,
-                      fillColor: Pallete.greey.withOpacity(0.3),
-                      border: OutlineInputBorder(
-                        borderSide: const BorderSide(color: Colors.transparent),
-                        borderRadius: BorderRadius.circular(10.r),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: const BorderSide(color: Colors.transparent),
-                        borderRadius: BorderRadius.circular(10.r),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: const BorderSide(color: Colors.transparent),
-                        borderRadius: BorderRadius.circular(10.r),
-                      ),
-                      contentPadding: EdgeInsets.all(18.w)),
-                  maxLength: 21,
+                    hintText: 'Task Name',
+                    hintStyle: TextStyle(fontSize: 15.sp),
+                    filled: true,
+                    fillColor: Pallete.greey.withOpacity(0.3),
+                    border: OutlineInputBorder(
+                      borderSide: const BorderSide(color: Colors.transparent),
+                      borderRadius: BorderRadius.circular(10.r),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: const BorderSide(color: Colors.transparent),
+                      borderRadius: BorderRadius.circular(10.r),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: const BorderSide(color: Colors.transparent),
+                      borderRadius: BorderRadius.circular(10.r),
+                    ),
+                    contentPadding: EdgeInsets.all(18.w),
+                  ),
+                  maxLength: 100,
                 ),
                 20.sbH,
                 Align(
@@ -248,9 +260,10 @@ class _TaskCreationBottomSheetState
                   child: Text(
                     'Task Description',
                     style: TextStyle(
-                        color: Pallete.blackTint,
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.w500),
+                      color: Pallete.blackTint,
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
                 12.sbH,
@@ -259,24 +272,25 @@ class _TaskCreationBottomSheetState
                 TextField(
                   controller: _descriptionController,
                   decoration: InputDecoration(
-                      hintText: 'Type something...',
-                      hintStyle: TextStyle(fontSize: 14.sp),
-                      filled: true,
-                      fillColor: Pallete.greey.withOpacity(0.3),
-                      border: OutlineInputBorder(
-                        borderSide: const BorderSide(color: Colors.transparent),
-                        borderRadius: BorderRadius.circular(10.r),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: const BorderSide(color: Colors.transparent),
-                        borderRadius: BorderRadius.circular(10.r),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderSide: const BorderSide(color: Colors.transparent),
-                        borderRadius: BorderRadius.circular(10.r),
-                      ),
-                      contentPadding: EdgeInsets.all(18.w)),
-                  // maxLength: 21,
+                    hintText: 'Type something...',
+                    hintStyle: TextStyle(fontSize: 14.sp),
+                    filled: true,
+                    fillColor: Pallete.greey.withOpacity(0.3),
+                    border: OutlineInputBorder(
+                      borderSide: const BorderSide(color: Colors.transparent),
+                      borderRadius: BorderRadius.circular(10.r),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: const BorderSide(color: Colors.transparent),
+                      borderRadius: BorderRadius.circular(10.r),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: const BorderSide(color: Colors.transparent),
+                      borderRadius: BorderRadius.circular(10.r),
+                    ),
+                    contentPadding: EdgeInsets.all(18.w),
+                  ),
+                  // maxLength: 100,
                   maxLines: 7,
                 ),
 

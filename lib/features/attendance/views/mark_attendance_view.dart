@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:stark/theme/stark_icons.dart';
 import 'package:stark/features/attendance/controllers/attendance_controller.dart';
 import 'package:stark/features/auth/controllers/auth_controller.dart';
 import 'package:stark/features/organisation/controllers/organisation_controller.dart';
@@ -46,7 +46,7 @@ class _MarkAttendanceViewState extends ConsumerState<MarkAttendanceView> {
               onPressed: () => ref
                   .read(attendanceControllerProvider.notifier)
                   .createAttendance(context),
-              child: Icon(PhosphorIcons.repeatBold),
+              child: Icon(StarkIcons.repeatBold),
             );
           }
         },
@@ -122,7 +122,7 @@ class _MarkAttendanceViewState extends ConsumerState<MarkAttendanceView> {
                                 CircleAvatar(
                                   radius: 25.w,
                                   backgroundImage:
-                                      NetworkImage(employeee.profilePic),
+                                      employeee.profilePic.isEmpty ? null : NetworkImage(employeee.profilePic),
                                 ),
                                 10.sbW,
                                 Column(
@@ -138,7 +138,7 @@ class _MarkAttendanceViewState extends ConsumerState<MarkAttendanceView> {
                                     ),
                                     5.sbH,
                                     Text(
-                                      'Role', //TODO! update role in the organisation model, add roles and department
+                                      employeee.role.isEmpty ? 'Employee' : employeee.role,
                                       style: TextStyle(
                                         color: Pallete.greyColor,
                                         fontSize: 14.sp,

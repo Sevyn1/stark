@@ -2,7 +2,7 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:routemaster/routemaster.dart';
+import 'package:stark/core/app_navigation.dart';
 import 'package:stark/core/constants/constants.dart';
 import 'package:stark/core/providers/storage_repository_provider.dart';
 import 'package:stark/features/auth/controllers/auth_controller.dart';
@@ -21,29 +21,34 @@ final getOrganisationByNameProvider = StreamProvider.family((ref, String name) {
 
 //! get manager organisations provider
 final getManagerOrganisationsProvider = StreamProvider((ref) {
-  final organisationController =
-      ref.watch(organisationsControllerProvider.notifier);
+  final organisationController = ref.watch(
+    organisationsControllerProvider.notifier,
+  );
   return organisationController.getManagerOrganisations();
 });
 
 //! get employee organisations provider
 final getEmployeeOrganisationsProvider = StreamProvider((ref) {
-  final organisationController =
-      ref.watch(organisationsControllerProvider.notifier);
+  final organisationController = ref.watch(
+    organisationsControllerProvider.notifier,
+  );
   return organisationController.getEmployeeOrganisations();
 });
 
 //! the organization controller provider
 final organisationsControllerProvider =
     StateNotifierProvider<OrganisationController, bool>((ref) {
-  final organisationsRepository = ref.watch(organisationsRepositoryProvider);
-  final storageRepository = ref.watch(storageRepositoryProvider);
-  return OrganisationController(
-    organisationsRepository: organisationsRepository,
-    storageRepository: storageRepository,
-    ref: ref,
-  );
-});
+      ref.watch(userProvider);
+      final organisationsRepository = ref.watch(
+        organisationsRepositoryProvider,
+      );
+      final storageRepository = ref.watch(storageRepositoryProvider);
+      return OrganisationController(
+        organisationsRepository: organisationsRepository,
+        storageRepository: storageRepository,
+        ref: ref,
+      );
+    });
 
 //! organisation state notifier class
 class OrganisationController extends StateNotifier<bool> {
@@ -54,13 +59,14 @@ class OrganisationController extends StateNotifier<bool> {
     required OrganisationsRepository organisationsRepository,
     required StorageRepository storageRepository,
     required Ref ref,
-  })  : _organisationsRepository = organisationsRepository,
-        _storageRepository = storageRepository,
-        _ref = ref,
-        super(false);
+  }) : _organisationsRepository = organisationsRepository,
+       _storageRepository = storageRepository,
+       _ref = ref,
+       super(false);
 
   // create organisation
   void createOrganisation(String name, BuildContext context) async {
+    name = name.trim();
     state = true;
     final user = _ref.read(userProvider)!;
     OrganisationModel organisation = OrganisationModel(
@@ -83,18 +89,18 @@ class OrganisationController extends StateNotifier<bool> {
       timeSent: DateTime.now(),
     );
 
-    _organisationsRepository.createMessageGroup(orgMessaging);
     final res = await _organisationsRepository.createOrganisation(
-        organisation, user.uid);
-
-    state = false;
-    res.fold(
-      (failure) => showSnackBar(context, failure.message),
-      (success) {
-        showSnackBar(context, 'Organisation created successfully');
-        Routemaster.of(context).pop();
-      },
+      organisation,
+      user.uid,
+      messaging: orgMessaging,
     );
+
+    if (mounted) state = false;
+    if (!context.mounted) return;
+    res.fold((failure) => showSnackBar(context, failure.message), (success) {
+      showSnackBar(context, 'Organisation created successfully');
+      AppNavigator.of(context).pop();
+    });
   }
 
   //! get manager organisations
@@ -115,25 +121,26 @@ class OrganisationController extends StateNotifier<bool> {
   }
 
   //! sack employee
-  void sackEmployee(
-      {required BuildContext context,
-      required String employeeId,
-      required String orgName}) async {
+  void sackEmployee({
+    required BuildContext context,
+    required String employeeId,
+    required String orgName,
+  }) async {
     // String orgName = '';
     state = true;
     // final ress = _ref.watch(getManagerOrganisationsProvider);
     // ress.whenData((organisation) => orgName = organisation[0].name);
 
     final res = await _organisationsRepository.sackEmployee(
-        organisationName: orgName, employeeId: employeeId);
-    state = false;
-
-    res.fold(
-      (failure) => showSnackBar(context, failure.message),
-      (success) {
-        showSnackBar(context, 'Sacked!');
-        Routemaster.of(context).pop();
-      },
+      organisationName: orgName,
+      employeeId: employeeId,
     );
+    if (mounted) state = false;
+
+    if (!context.mounted) return;
+    res.fold((failure) => showSnackBar(context, failure.message), (success) {
+      showSnackBar(context, 'Sacked!');
+      AppNavigator.of(context).pop();
+    });
   }
 }

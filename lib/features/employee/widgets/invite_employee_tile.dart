@@ -4,7 +4,7 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:stark/theme/stark_icons.dart';
 import 'package:stark/features/employee/controllers/employee_controller.dart';
 import 'package:stark/features/organisation/controllers/organisation_controller.dart';
 
@@ -81,7 +81,7 @@ class InviteEmployeeTile extends ConsumerWidget {
                   Row(
                     children: [
                       Icon(
-                        PhosphorIcons.envelopeFill,
+                        StarkIcons.envelopeFill,
                         size: 16.sp,
                       ),
                       7.sbW,

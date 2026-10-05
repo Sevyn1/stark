@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:hidden_drawer_menu/hidden_drawer_menu.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:routemaster/routemaster.dart';
+import 'package:stark/theme/stark_icons.dart';
+import 'package:stark/core/app_navigation.dart';
 import 'package:stark/features/auth/controllers/auth_controller.dart';
 import 'package:stark/features/employee/views/invite_employees_search_delegate.dart';
 import 'package:stark/features/employee/widgets/employee_card.dart';
@@ -26,7 +26,7 @@ class EmployeeView extends ConsumerWidget {
     //! navigation
     //! navigation
     void navigateToCreateOrg(BuildContext context) {
-      Routemaster.of(context).push('/create-organisation');
+      AppNavigator.of(context).push('/create-organisation');
     }
 
     final user = ref.watch(userProvider)!;
@@ -113,7 +113,7 @@ class EmployeeView extends ConsumerWidget {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  'Search...',
+                                  'Find an employee to invite',
                                   style: TextStyle(
                                     color: Pallete.greey,
                                     fontSize: 15.sp,
@@ -121,7 +121,7 @@ class EmployeeView extends ConsumerWidget {
                                   ),
                                 ),
                                 Icon(
-                                  PhosphorIcons.magnifyingGlass,
+                                  StarkIcons.magnifyingGlass,
                                   color: Pallete.greey,
                                   size: 20.sp,
                                 ),

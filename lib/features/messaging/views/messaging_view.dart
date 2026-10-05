@@ -1,3 +1,4 @@
+import 'package:stark/features/auth/controllers/auth_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -14,6 +15,7 @@ class MessagingView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (ref.watch(userProvider)?.organisation.isEmpty ?? true) return const Scaffold(appBar: MyAppBar(title: 'Messages'), body: Center(child: Padding(padding: EdgeInsets.all(24), child: Text('Accept an invitation to join your team’s conversations.'))));
     final messagesStream = ref.watch(getGroupChatStreamProvider);
     return Scaffold(
       appBar: const MyAppBar(
@@ -30,17 +32,10 @@ class MessagingView extends ConsumerWidget {
             ],
           );
         },
-        error: (error, stactrace) => Center(
-          child: Text(
-            'No messages',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Pallete.blackish,
-              fontSize: 20.sp,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
+        error: (_, __) => Center(child: Column(mainAxisSize:MainAxisSize.min,children:[
+          const Text('Could not load messages. Please try again.'),
+          TextButton(onPressed:()=>ref.invalidate(getGroupChatStreamProvider),child:const Text('Retry')),
+        ])),
         loading: () => const Loader(),
       ),
     );

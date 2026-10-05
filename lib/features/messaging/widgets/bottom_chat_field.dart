@@ -1,283 +1,125 @@
-import 'dart:io';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_sound/public/flutter_sound_recorder.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:stark/core/enums/enums.dart';
 import 'package:stark/core/providers/message_reply_provider.dart';
 import 'package:stark/features/messaging/controllers/messaging_controller.dart';
 import 'package:stark/features/messaging/widgets/message_reply_preview.dart';
-import 'package:stark/theme/palette.dart';
+import 'package:stark/utils/snack_bar.dart';
 
 class BottomChatField extends ConsumerStatefulWidget {
-  const BottomChatField({
-    Key? key,
-    // required this.recieverUserId,
-    // required this.isGroupChat,
-  }) : super(key: key);
-
+  const BottomChatField({super.key});
   @override
   ConsumerState<BottomChatField> createState() => _BottomChatFieldState();
 }
 
 class _BottomChatFieldState extends ConsumerState<BottomChatField> {
-  bool isShowSendButton = false;
-  final TextEditingController _messageController = TextEditingController();
-  FlutterSoundRecorder? _soundRecorder;
-  bool isRecorderInit = false;
-  bool isShowEmojiContainer = false;
-  bool isRecording = false;
-  FocusNode focusNode = FocusNode();
-
+  final text = TextEditingController();
+  final focus = FocusNode();
+  bool emoji = false;
+  bool busy = false;
   @override
-  void initState() {
-    super.initState();
-    _soundRecorder = FlutterSoundRecorder(); 
-    openAudio();
+  void dispose() {
+    text.dispose();
+    focus.dispose();
+    super.dispose();
   }
 
-  void openAudio() async {
-      final status = await Permission.microphone.request();
-      if (status != PermissionStatus.granted) {
-        throw RecordingPermissionException('Mic permission not allowed!');
+  Future<void> send() async {
+    final draft = text.text.trim();
+    if (draft.isEmpty || busy) return;
+    setState(() => busy = true);
+    final sent = await ref
+        .read(messagingControllerProvider.notifier)
+        .sendTextMessageManager(context: context, text: draft);
+    if (!mounted) return;
+    setState(() {
+      if (sent) text.clear();
+      busy = false;
+    });
+  }
+
+  Future<void> attach() async {
+    if (busy) return;
+    setState(() => busy = true);
+    try {
+      final selection = await FilePicker.pickFile(
+        type: FileType.custom,
+        allowedExtensions: ['png', 'jpg', 'jpeg', 'webp'],
+      );
+      if (selection == null) return;
+      final image = selection;
+      final size = await image.length();
+      if (size == null || size > 5 * 1024 * 1024) {
+        if (mounted)
+          showSnackBar(context, 'Choose an image smaller than 5 MB.');
+        return;
       }
-      await _soundRecorder!.openRecorder();
-      isRecorderInit = true;
-  }
-
-  void sendTextMessage() async {
-    // if (isShowSendButton) {
-    ref.read(messagingControllerProvider.notifier).sendTextMessageManager(
-          context: context,
-          text: _messageController.text.trim(),
+      final bytes = await image.readAsBytes();
+      if (bytes.length > 5 * 1024 * 1024) throw StateError("Image too large");
+      await ref
+          .read(messagingControllerProvider.notifier)
+          .sendImage(context: context, bytes: bytes);
+    } catch (_) {
+      if (mounted)
+        showSnackBar(
+          context,
+          'The image could not be attached. Please try again.',
         );
-    setState(() {
-      _messageController.text = '';
-    });
-    // } else {
-    //   var tempDir = await getTemporaryDirectory();
-    //   var path = '${tempDir.path}/flutter_sound.aac';
-    //   if (!isRecorderInit) {
-    //     return;
-    //   }
-    //   if (isRecording) {
-    //     await _soundRecorder!.stopRecorder();
-    //     sendFileMessage(File(path), MessageEnum.audio);
-    //   } else {
-    //     await _soundRecorder!.startRecorder(
-    //       toFile: path,
-    //     );
-    //   }
-
-    //   setState(() {
-    //     isRecording = !isRecording;
-    //   });
-    // }
-  }
-
-  void sendFileMessage(
-    File file,
-    MessageEnum messageEnum,
-  ) {
-    //   ref.read(chatControllerProvider).sendFileMessage(
-    //         context,
-    //         file,
-    //         widget.recieverUserId,
-    //         messageEnum,
-    //         widget.isGroupChat,
-    //       );
-  }
-
-  void selectImage() async {
-    //   File? image = await pickImageFromGallery(context);
-    //   if (image != null) {
-    //     sendFileMessage(image, MessageEnum.image);
-    //   }
-  }
-
-  void selectVideo() async {
-    //   File? video = await pickVideoFromGallery(context);
-    //   if (video != null) {
-    //     sendFileMessage(video, MessageEnum.video);
-    //   }
-  }
-
-  void selectGIF() async {
-    // final gif = await pickGIF(context);
-    // if (gif != null) {
-    //   ref.read(chatControllerProvider).sendGIFMessage(
-    //         context,
-    //         gif.url,
-    //         widget.recieverUserId,
-    //         widget.isGroupChat,
-    //       );
-    // }
-  }
-
-  void hideEmojiContainer() {
-    setState(() {
-      isShowEmojiContainer = false;
-    });
-  }
-
-  void showEmojiContainer() {
-    setState(() {
-      isShowEmojiContainer = true;
-    });
-  }
-
-  void showKeyboard() => focusNode.requestFocus();
-  void hideKeyboard() => focusNode.unfocus();
-
-  void toggleEmojiKeyboardContainer() {
-    if (isShowEmojiContainer) {
-      showKeyboard();
-      hideEmojiContainer();
-    } else {
-      hideKeyboard();
-      showEmojiContainer();
+    } finally {
+      if (mounted) setState(() => busy = false);
     }
   }
 
   @override
-  void dispose() {
-    super.dispose();
-    _messageController.dispose();
-    _soundRecorder!.closeRecorder();
-    isRecorderInit = false;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final messageReply = ref.watch(messageReplyProvider);
-    final isShowMessageReply = messageReply != null;
-    return Column(
+  Widget build(BuildContext context) => SafeArea(
+    top: false,
+    child: Column(
       children: [
-        isShowMessageReply ? const MessageReplyPreview() : const SizedBox(),
+        if (ref.watch(messageReplyProvider) != null)
+          const MessageReplyPreview(),
         Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            IconButton(
+              tooltip: 'Emoji',
+              onPressed: busy ? null : () => setState(() => emoji = !emoji),
+              icon: const Icon(Icons.emoji_emotions_outlined),
+            ),
             Expanded(
-              child: TextFormField(
-                cursorColor: Pallete.blackTint,
-                focusNode: focusNode,
-                controller: _messageController,
-                onChanged: (val) {
-                  if (val.isNotEmpty) {
-                    setState(() {
-                      isShowSendButton = true;
-                    });
-                  } else {
-                    setState(() {
-                      isShowSendButton = false;
-                    });
-                  }
-                },
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: Pallete.greey,
-                  prefixIcon: Padding(
-                    padding: EdgeInsets.only(left: 10.w),
-                    child: SizedBox(
-                      width: 50.w,
-                      child: Row(
-                        children: [
-                          IconButton(
-                            onPressed: toggleEmojiKeyboardContainer,
-                            icon: const Icon(
-                              Icons.emoji_emotions,
-                              color: Colors.grey,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  suffixIcon: SizedBox(
-                    width: 100,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        IconButton(
-                          onPressed: selectImage,
-                          icon: const Icon(
-                            Icons.camera_alt,
-                            color: Colors.grey,
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: selectVideo,
-                          icon: const Icon(
-                            Icons.attach_file,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  hintText: 'Type a message!',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(20.0),
-                    borderSide: const BorderSide(
-                      width: 0,
-                      style: BorderStyle.none,
-                    ),
-                  ),
-                  contentPadding: const EdgeInsets.all(10),
-                ),
+              child: TextField(
+                controller: text,
+                focusNode: focus,
+                enabled: !busy,
+                minLines: 1,
+                maxLines: 4,
+                decoration: const InputDecoration(hintText: 'Write a message'),
+                onSubmitted: (_) => send(),
               ),
             ),
-            Padding(
-              padding: EdgeInsets.only(
-                bottom: 8.h,
-                right: 2.w,
-                left: 2.w,
-              ),
-              child: CircleAvatar(
-                backgroundColor: Pallete.blackish.withOpacity(0.7),
-                radius: 22.w,
-                child: GestureDetector(
-                  onTap: () {
-                    if (_messageController.text.isNotEmpty) {
-                      sendTextMessage();
-                    }
-                  },
-                  child: Icon(
-                    isShowSendButton
-                        ? Icons.send
-                        : isRecording
-                            ? Icons.close
-                            : Icons.mic,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
+            IconButton(
+              tooltip: 'Attach image',
+              onPressed: busy ? null : attach,
+              icon: const Icon(Icons.image_outlined),
+            ),
+            IconButton(
+              tooltip: 'Send message',
+              onPressed: busy ? null : send,
+              icon: busy
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.send),
             ),
           ],
         ),
-        isShowEmojiContainer
-            ? SizedBox(
-                height: 310,
-                child: EmojiPicker(
-                  onEmojiSelected: ((category, emoji) {
-                    setState(() {
-                      _messageController.text =
-                          _messageController.text + emoji.emoji;
-                    });
-
-                    if (!isShowSendButton) {
-                      setState(() {
-                        isShowSendButton = true;
-                      });
-                    }
-                  }),
-                ),
-              )
-            : const SizedBox(),
+        if (emoji)
+          SizedBox(
+            height: 250,
+            child: EmojiPicker(textEditingController: text),
+          ),
       ],
-    );
-  }
+    ),
+  );
 }

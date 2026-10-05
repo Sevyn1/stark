@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:stark/theme/stark_icons.dart';
 
 import 'package:stark/features/auth/controllers/auth_controller.dart';
 import 'package:stark/features/employee/widgets/remove_employee_bottom_sheet.dart';
@@ -88,7 +88,7 @@ class EmployeeCard extends ConsumerWidget {
                       //     );
                       //   },
                       //   icon: const Icon(
-                      //     PhosphorIcons.signOutBold,
+                      //     StarkIcons.signOutBold,
                       //     color: Pallete.thickRed,
                       //   ),
                       // ),
@@ -124,7 +124,7 @@ class EmployeeCard extends ConsumerWidget {
                   25.sbH,
                   Row(
                     children: [
-                      const Icon(PhosphorIcons.envelope),
+                      const Icon(StarkIcons.envelope),
                       7.sbW,
                       Text(
                         employee.email,
@@ -139,7 +139,7 @@ class EmployeeCard extends ConsumerWidget {
                   10.sbH,
                   Row(
                     children: [
-                      const Icon(PhosphorIcons.phone),
+                      const Icon(StarkIcons.phone),
                       7.sbW,
                       Text(
                         employee.phone == '' ? '- - - - - -' : employee.phone,

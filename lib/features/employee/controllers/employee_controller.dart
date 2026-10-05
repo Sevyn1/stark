@@ -2,7 +2,7 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:routemaster/routemaster.dart';
+import 'package:stark/core/app_navigation.dart';
 import 'package:stark/core/providers/storage_repository_provider.dart';
 import 'package:stark/features/auth/controllers/auth_controller.dart';
 import 'package:stark/features/employee/repositories/employee_repository.dart';
@@ -26,8 +26,10 @@ final getEmployeesProvider = StreamProvider((ref) {
 });
 
 //! the search for employees provider to invite
-final searchEmployeeToInviteProvider =
-    StreamProvider.family((ref, String query) {
+final searchEmployeeToInviteProvider = StreamProvider.family((
+  ref,
+  String query,
+) {
   return ref
       .watch(employeeControllerProvider.notifier)
       .searchForEmployeesToInvite(query);
@@ -48,14 +50,15 @@ final getInvitesForEmployeeProvider = StreamProvider((ref) {
 //! the notifier provider
 final employeeControllerProvider =
     StateNotifierProvider<EmployeeController, bool>((ref) {
-  final employeeRepository = ref.watch(employeeRepositoryProvider);
-  final storageRepository = ref.watch(storageRepositoryProvider);
-  return EmployeeController(
-    employeeRepository: employeeRepository,
-    storageRepository: storageRepository,
-    ref: ref,
-  );
-});
+      ref.watch(userProvider);
+      final employeeRepository = ref.watch(employeeRepositoryProvider);
+      final storageRepository = ref.watch(storageRepositoryProvider);
+      return EmployeeController(
+        employeeRepository: employeeRepository,
+        storageRepository: storageRepository,
+        ref: ref,
+      );
+    });
 
 //! employee state notifier
 class EmployeeController extends StateNotifier<bool> {
@@ -66,10 +69,10 @@ class EmployeeController extends StateNotifier<bool> {
     required EmployeeRepository employeeRepository,
     required StorageRepository storageRepository,
     required Ref ref,
-  })  : _employeeRepository = employeeRepository,
-        _storageRepository = storageRepository,
-        _ref = ref,
-        super(false);
+  }) : _employeeRepository = employeeRepository,
+       _storageRepository = storageRepository,
+       _ref = ref,
+       super(false);
 
   //! send invite
   void sendInvite({
@@ -90,33 +93,31 @@ class EmployeeController extends StateNotifier<bool> {
 
     final res = await _employeeRepository.sendInvite(invite, organisationName);
 
-    state = false;
+    if (mounted) state = false;
 
-    res.fold(
-      (failure) => showSnackBar(context, failure.message),
-      (success) {
-        showSnackBar(context, 'Invite sent');
-        // Routemaster.of(context).pop();
-      },
-    );
+    if (!context.mounted) return;
+    res.fold((failure) => showSnackBar(context, failure.message), (success) {
+      showSnackBar(context, 'Invite sent');
+      // AppNavigator.of(context).pop();
+    });
   }
 
   //! reject invite
   void rejectInvite(InviteModel invite, BuildContext context) async {
     final res = await _employeeRepository.rejectInvite(invite);
-    res.fold(
-      (l) => null,
-      (r) => showSnackBar(context, 'Invitation Rejected!'),
-    );
+    if (!context.mounted) return;
+    res.fold((l) {
+      if (context.mounted) showSnackBar(context, l.message);
+    }, (r) => showSnackBar(context, 'Invitation Rejected!'));
   }
 
   //! accept invite
   void acceptInvite(InviteModel invite, BuildContext context) async {
     final res = await _employeeRepository.acceptInvite(invite);
-    res.fold(
-      (l) => null,
-      (r) => showSnackBar(context, 'Invitation Accepted!'),
-    );
+    if (!context.mounted) return;
+    res.fold((l) {
+      if (context.mounted) showSnackBar(context, l.message);
+    }, (r) => showSnackBar(context, 'Invitation Accepted!'));
   }
 
   //! get an invite moder
@@ -126,9 +127,7 @@ class EmployeeController extends StateNotifier<bool> {
 
   //! stream of employees
   Stream<List<UserModel>> getEmployees() {
-    String orgName = '';
-    final ress = _ref.watch(getManagerOrganisationsProvider);
-    ress.whenData((organisation) => orgName = organisation[0].name);
+    final orgName = _ref.read(userProvider)?.organisation ?? '';
     return _employeeRepository.getEmployees(orgName);
   }
 

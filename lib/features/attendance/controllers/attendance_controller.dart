@@ -1,3 +1,4 @@
+import 'package:stark/features/auth/controllers/auth_controller.dart';
 //! organisation state notifier class
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -38,14 +39,15 @@ final getAttendanceSignedStreamProvider = StreamProvider((ref) {
 //! the attendance controller provider
 final attendanceControllerProvider =
     StateNotifierProvider<AttendanceController, bool>((ref) {
-  final attendanceRepository = ref.watch(attendanceRepositoryProvider);
-  final storageRepository = ref.watch(storageRepositoryProvider);
-  return AttendanceController(
-    attendanceRepository: attendanceRepository,
-    storageRepository: storageRepository,
-    ref: ref,
-  );
-});
+      ref.watch(userProvider);
+      final attendanceRepository = ref.watch(attendanceRepositoryProvider);
+      final storageRepository = ref.watch(storageRepositoryProvider);
+      return AttendanceController(
+        attendanceRepository: attendanceRepository,
+        storageRepository: storageRepository,
+        ref: ref,
+      );
+    });
 
 //! attendance state notifier class
 class AttendanceController extends StateNotifier<bool> {
@@ -56,21 +58,16 @@ class AttendanceController extends StateNotifier<bool> {
     required AttendanceRepository attendanceRepository,
     required StorageRepository storageRepository,
     required Ref ref,
-  })  : _attendanceRepository = attendanceRepository,
-        _storageRepository = storageRepository,
-        _ref = ref,
-        super(false);
+  }) : _attendanceRepository = attendanceRepository,
+       _storageRepository = storageRepository,
+       _ref = ref,
+       super(false);
 
   //! create attendance instance
-  void createAttendance(
-    BuildContext context,
-  ) async {
-    String orgName = '';
+  void createAttendance(BuildContext context) async {
+    String orgName = _ref.read(userProvider)?.organisation ?? '';
 
     state = true;
-
-    final ress = _ref.watch(getManagerOrganisationsProvider);
-    ress.whenData((organisation) => orgName = organisation[0].name);
 
     AttendanceModel attendance = AttendanceModel(
       timeIn: null,
@@ -79,49 +76,40 @@ class AttendanceController extends StateNotifier<bool> {
       employeeId: '',
     );
 
-    final res =
-        await _attendanceRepository.createAttendance(attendance, orgName);
-
-    state = false;
-
-    res.fold(
-      (failure) => showSnackBar(context, failure.message),
-      (success) {
-        showSnackBar(context, 'Attendance created successfully');
-        // Navigate to another page or refresh the current page.
-      },
+    final res = await _attendanceRepository.createAttendance(
+      attendance,
+      orgName,
     );
+
+    if (mounted) state = false;
+
+    if (!context.mounted) return;
+    res.fold((failure) => showSnackBar(context, failure.message), (success) {
+      showSnackBar(context, 'Attendance created successfully');
+      // Navigate to another page or refresh the current page.
+    });
   }
 
-// Mark attendance for the given employee
+  // Mark attendance for the given employee
   void markAttendance(BuildContext context, String employeeId) async {
     // Get the name of the organization
-    String orgName = '';
+    String orgName = _ref.read(userProvider)?.organisation ?? '';
 
     // Update the state of the app
     state = true;
 
     // Get the name of the organization
-    final ress = _ref.watch(getManagerOrganisationsProvider);
-    ress.whenData((organisation) => orgName = organisation[0].name);
 
     // Define res here
     Either<Failure, void> res;
 
-    if (DateTime.now().isBefore(DateTime(
-        DateTime.now().year, DateTime.now().month, DateTime.now().day, 12))) {
-      await _attendanceRepository.updateAtendancePresent(employeeId);
-      await _attendanceRepository.updateAtendanceEarlyOrLate(employeeId);
-      res = await _attendanceRepository.markAttendance(employeeId);
-    } else {
-      await _attendanceRepository.updateAttendanceAbsent(employeeId);
-      res = await _attendanceRepository.markAttendanceAsNever(employeeId);
-    }
+    res = await _attendanceRepository.signAttendance(employeeId, orgName);
 
     // Update the state of the app
-    state = false;
+    if (mounted) state = false;
 
     // Show a snackbar to indicate success or failure
+    if (!context.mounted) return;
     res.fold(
       (l) => showSnackBar(context, 'An error occurred while signing'),
       (r) => showSnackBar(context, 'Signed!'),
@@ -132,39 +120,33 @@ class AttendanceController extends StateNotifier<bool> {
   void markAttendanceAsNever(BuildContext context, String employeeId) async {
     state = true;
     final res = await _attendanceRepository.markAttendanceAsNever(employeeId);
-    state = false;
-    res.fold(
-      (l) => null,
-      (r) => null,
-    );
+    if (mounted) state = false;
+    if (!context.mounted) return;
+    res.fold((l) => null, (r) => null);
   }
 
   //! get attendance stream
   Stream<List<AttendanceModel>> getAttendanceList() {
-    String orgName = '';
-    final ress = _ref.watch(getManagerOrganisationsProvider);
-    ress.whenData((organisation) => orgName = organisation[0].name);
+    String orgName = _ref.read(userProvider)?.organisation ?? '';
     return _attendanceRepository.getAttendanceList(orgName);
   }
 
   //! get attendance record for partiular days
   Stream<List<AttendanceRecordModel>> getListAttendanceRecords() {
-    String orgName = '';
-    final ress = _ref.watch(getEmployeeOrganisationsProvider);
-    ress.whenData((organisation) => orgName = organisation[0].name);
+    String orgName = _ref.read(userProvider)?.organisation ?? '';
     return _attendanceRepository.getListAttendanceRecords(orgName);
   }
 
   //! get attendance signed stream
   Stream<List<AttendanceModel>> getAttendanceListSigned() {
-    String orgName = '';
-    final ress = _ref.watch(getManagerOrganisationsProvider);
-    ress.whenData((organisation) => orgName = organisation[0].name);
+    String orgName = _ref.read(userProvider)?.organisation ?? '';
     return _attendanceRepository.getAttendanceListSigned(orgName);
   }
 
   //! get attendance record
   Stream<AttendanceRecordModel> getAttendanceRecord() {
-    return _attendanceRepository.getAttendanceRecord();
+    return _attendanceRepository.getAttendanceRecord(
+      orgName: _ref.read(userProvider)?.organisation ?? '',
+    );
   }
 }

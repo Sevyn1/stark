@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-final themeNotifierProvider =
-    StateNotifierProvider<ThemeNotifier, ThemeData>((ref) {
+final themeNotifierProvider = StateNotifierProvider<ThemeNotifier, ThemeData>((
+  ref,
+) {
   return ThemeNotifier();
 });
 
@@ -46,48 +47,38 @@ class Pallete {
     cardColor: greyColor,
     appBarTheme: const AppBarTheme(
       backgroundColor: drawerColor,
-      iconTheme: IconThemeData(
-        color: whiteColor,
-      ),
+      iconTheme: IconThemeData(color: whiteColor),
     ),
-    drawerTheme: const DrawerThemeData(
-      backgroundColor: drawerColor,
-    ),
+    drawerTheme: const DrawerThemeData(backgroundColor: drawerColor),
     primaryColor: blueColor,
-    backgroundColor:
-        drawerColor, // will be used as alternative background color
+    colorScheme: const ColorScheme.dark(surface: drawerColor),
     canvasColor: greyColor,
   );
 
   static var lightModeAppTheme = ThemeData.light().copyWith(
-      // textTheme: GoogleFonts.spaceGroteskTextTheme(),
-      // textTheme: ThemeData.light().textTheme.apply(
-      //       fontFamily: 'Sk-Modernist',
-      //     ),
-      scaffoldBackgroundColor: whiteColor,
-      cardColor: greyColor,
-      appBarTheme: const AppBarTheme(
-        backgroundColor: whiteColor,
-        elevation: 0,
-        iconTheme: IconThemeData(
-          color: blackColor,
-        ),
-      ),
-      drawerTheme: const DrawerThemeData(
-        backgroundColor: whiteColor,
-      ),
-      primaryColor: blueColor,
+    // textTheme: GoogleFonts.spaceGroteskTextTheme(),
+    // textTheme: ThemeData.light().textTheme.apply(
+    //       fontFamily: 'Sk-Modernist',
+    //     ),
+    scaffoldBackgroundColor: whiteColor,
+    cardColor: greyColor,
+    appBarTheme: const AppBarTheme(
       backgroundColor: whiteColor,
-      canvasColor: blackColor);
+      elevation: 0,
+      iconTheme: IconThemeData(color: blackColor),
+    ),
+    drawerTheme: const DrawerThemeData(backgroundColor: whiteColor),
+    primaryColor: blueColor,
+    colorScheme: const ColorScheme.light(surface: whiteColor),
+    canvasColor: blackColor,
+  );
 }
 
 class ThemeNotifier extends StateNotifier<ThemeData> {
   ThemeMode _mode;
   ThemeNotifier({ThemeMode mode = ThemeMode.dark})
-      : _mode = mode,
-        super(
-          Pallete.darkModeAppTheme,
-        ) {
+    : _mode = mode,
+      super(Pallete.darkModeAppTheme) {
     getTheme();
   }
 

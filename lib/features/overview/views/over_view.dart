@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
-import 'package:routemaster/routemaster.dart';
+import 'package:stark/core/app_navigation.dart';
 import 'package:stark/features/attendance/controllers/attendance_controller.dart';
 import 'package:stark/features/auth/controllers/auth_controller.dart';
 import 'package:stark/features/organisation/controllers/organisation_controller.dart';
@@ -30,11 +30,11 @@ class _OverViewState extends ConsumerState<OverView> {
 
   //! navigation
   void navigateToCreateOrg(BuildContext context) {
-    Routemaster.of(context).push('/create-organisation');
+    AppNavigator.of(context).push('/create-organisation');
   }
 
   void navigateToMarkAttendance(BuildContext context) {
-    Routemaster.of(context).push('/mark-attendance');
+    AppNavigator.of(context).push('/mark-attendance');
   }
 
   int getNumberOfProjectsDoneNumber(projects) {

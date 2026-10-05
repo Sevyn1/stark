@@ -28,8 +28,8 @@ class StorageRepository {
       final ref = _firebaseStorage.ref().child(path).child(id);
       UploadTask uploadTask;
 
-      if (kIsWeb) {
-        uploadTask = ref.putData(webFile!);
+      if (webFile != null) {
+        uploadTask = ref.putData(webFile);
       } else {
         uploadTask = ref.putFile(file!);
       }

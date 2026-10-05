@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:stark/theme/stark_icons.dart';
 import 'package:stark/features/auth/controllers/auth_controller.dart';
 import 'package:stark/features/tasks_projects/controllers/task_project_controller.dart';
 import 'package:stark/features/tasks_projects/views/task_creation_bottom_sheet.dart';
@@ -18,10 +18,7 @@ import 'package:stark/utils/widget_extensions.dart';
 
 class ProjectView extends ConsumerStatefulWidget {
   final String name;
-  const ProjectView({
-    super.key,
-    required this.name,
-  });
+  const ProjectView({super.key, required this.name});
 
   @override
   ConsumerState<ConsumerStatefulWidget> createState() => _ProjectViewState();
@@ -36,14 +33,13 @@ class _ProjectViewState extends ConsumerState<ProjectView> {
   }
 
   int getNumberOfTasksProgressNumber(tasks) {
-    return tasks.where((task) => task.status == 'not started').length;
+    return tasks.where((task) => task.status == 'ongoing').length;
   }
 
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(userProvider)!;
     String nname = widget.name;
-    nname = nname.replaceAll("%20", " ");
 
     //! get days left
     String calculateDaysRemaining(DateTime futureDate) {
@@ -56,11 +52,15 @@ class _ProjectViewState extends ConsumerState<ProjectView> {
     }
 
     return Scaffold(
-      floatingActionButton: ref.watch(getTasksInProjectProvider(nname)).when(
+      floatingActionButton: ref
+          .watch(getTasksInProjectProvider(nname))
+          .when(
             data: (tasks) {
               int done = getNumberOfTasksDoneNumber(tasks);
               if (done == tasks.length) {
-                return ref.watch(getProjectProvider(nname)).when(
+                return ref
+                    .watch(getProjectProvider(nname))
+                    .when(
                       data: (project) {
                         if (project.managerId != user.uid) {
                           return const SizedBox.shrink();
@@ -69,14 +69,23 @@ class _ProjectViewState extends ConsumerState<ProjectView> {
                         return FloatingActionButton.extended(
                           backgroundColor: Colors.green.shade900,
                           onPressed: () {
-                            ref
-                                .read(taskProjectControllerProvider.notifier)
-                                .updatProjectStatusDone(context, nname);
+                            final controller = ref.read(
+                              taskProjectControllerProvider.notifier,
+                            );
+                            if (project.status == 'done')
+                              controller.updateProjectStatusProgress(
+                                context,
+                                nname,
+                              );
+                            else
+                              controller.updatProjectStatusDone(context, nname);
                           },
                           label: Row(
                             children: [
                               Text(
-                                'Project Done',
+                                project.status == 'done'
+                                    ? 'Reopen project'
+                                    : 'Complete project',
                                 style: TextStyle(
                                   color: Pallete.whiteColor,
                                   fontSize: 14.sp,
@@ -84,10 +93,7 @@ class _ProjectViewState extends ConsumerState<ProjectView> {
                                 ),
                               ),
                               10.sbW,
-                              Icon(
-                                PhosphorIcons.checkBold,
-                                size: 20.sp,
-                              ),
+                              Icon(StarkIcons.checkBold, size: 20.sp),
                             ],
                           ),
                         );
@@ -108,12 +114,15 @@ class _ProjectViewState extends ConsumerState<ProjectView> {
         title: Text(
           nname,
           style: TextStyle(
-              color: Pallete.blackish,
-              fontSize: 22.sp,
-              fontWeight: FontWeight.bold),
+            color: Pallete.blackish,
+            fontSize: 22.sp,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         actions: [
-          ref.watch(getProjectProvider(nname)).when(
+          ref
+              .watch(getProjectProvider(nname))
+              .when(
                 data: (project) {
                   if (project.managerId != user.uid) {
                     return const SizedBox.shrink();
@@ -132,13 +141,11 @@ class _ProjectViewState extends ConsumerState<ProjectView> {
                           context: context,
                           builder: (context) => Padding(
                             padding: EdgeInsets.only(
-                                bottom:
-                                    MediaQuery.of(context).viewInsets.bottom),
+                              bottom: MediaQuery.of(context).viewInsets.bottom,
+                            ),
                             child: Wrap(
                               children: [
-                                TaskCreationBottomSheet(
-                                  projectName: nname,
-                                ),
+                                TaskCreationBottomSheet(projectName: nname),
                               ],
                             ),
                           ),
@@ -154,15 +161,18 @@ class _ProjectViewState extends ConsumerState<ProjectView> {
               ),
         ],
       ),
-      body: ref.watch(getProjectProvider(nname)).when(
+      body: ref
+          .watch(getProjectProvider(nname))
+          .when(
             data: (project) {
               return SizedBox.expand(
                 child: Column(
                   children: [
                     //! start date
                     Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 20.w)
-                          .copyWith(top: 15.h),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 20.w,
+                      ).copyWith(top: 15.h),
                       child: RichText(
                         text: TextSpan(
                           text: 'Started: ',
@@ -173,8 +183,9 @@ class _ProjectViewState extends ConsumerState<ProjectView> {
                           ),
                           children: [
                             TextSpan(
-                              text: DateFormat.yMMMMEEEEd()
-                                  .format(project.startDateTime),
+                              text: DateFormat.yMMMMEEEEd().format(
+                                project.startDateTime,
+                              ),
                               style: TextStyle(
                                 color: Colors.green,
                                 fontSize: 15.sp,
@@ -188,8 +199,9 @@ class _ProjectViewState extends ConsumerState<ProjectView> {
 
                     //
                     Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 20.w)
-                          .copyWith(top: 5.h),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 20.w,
+                      ).copyWith(top: 5.h),
                       child: RichText(
                         textAlign: TextAlign.start,
                         text: TextSpan(
@@ -201,8 +213,9 @@ class _ProjectViewState extends ConsumerState<ProjectView> {
                           ),
                           children: [
                             TextSpan(
-                              text: DateFormat.yMMMMEEEEd()
-                                  .format(project.endDateTime),
+                              text: DateFormat.yMMMMEEEEd().format(
+                                project.endDateTime,
+                              ),
                               style: TextStyle(
                                 color: Colors.green,
                                 fontSize: 15.sp,
@@ -216,20 +229,20 @@ class _ProjectViewState extends ConsumerState<ProjectView> {
                     20.sbH,
                     //! days left
                     Container(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 15.w, vertical: 5.h),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 15.w,
+                        vertical: 5.h,
+                      ),
                       decoration: BoxDecoration(
-                          color: calculateDaysRemaining(
-                                    project.endDateTime,
-                                  ) ==
-                                  'Overdue'
-                              ? Pallete.thickRed
-                              : Pallete.primaryGreen,
-                          borderRadius: BorderRadius.circular(20.r)),
+                        color:
+                            calculateDaysRemaining(project.endDateTime) ==
+                                'Overdue'
+                            ? Pallete.thickRed
+                            : Pallete.primaryGreen,
+                        borderRadius: BorderRadius.circular(20.r),
+                      ),
                       child: Text(
-                        calculateDaysRemaining(
-                          project.endDateTime,
-                        ),
+                        calculateDaysRemaining(project.endDateTime),
                         style: TextStyle(
                           color: Pallete.whiteColor,
                           fontSize: 14.sp,
@@ -245,25 +258,29 @@ class _ProjectViewState extends ConsumerState<ProjectView> {
                       width: double.infinity,
                       child: ListView.builder(
                         physics: const AlwaysScrollableScrollPhysics(
-                            parent: BouncingScrollPhysics()),
+                          parent: BouncingScrollPhysics(),
+                        ),
                         itemCount: project.employeeIds.length,
                         padding: 20.padH,
                         scrollDirection: Axis.horizontal,
                         itemBuilder: (context, index) {
                           if (project.employeeIds.isEmpty) {
                             return const ErrorText(
-                                error: 'No employees adeded to project');
+                              error: 'No employees adeded to project',
+                            );
                           }
 
                           return Container(
                             padding: EdgeInsets.symmetric(horizontal: 15.w),
                             margin: EdgeInsets.only(right: 10.w),
                             decoration: BoxDecoration(
-                                color: Pallete.greey,
-                                borderRadius: BorderRadius.circular(10.r)),
+                              color: Pallete.greey,
+                              borderRadius: BorderRadius.circular(10.r),
+                            ),
                             child: ref
                                 .watch(
-                                    getUserProvider(project.employeeIds[index]))
+                                  getUserProvider(project.employeeIds[index]),
+                                )
                                 .when(
                                   data: (employee) {
                                     return Center(
@@ -290,8 +307,9 @@ class _ProjectViewState extends ConsumerState<ProjectView> {
                     20.sbH,
                     //! tasks
                     Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 35.w)
-                          .copyWith(bottom: 20.h),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 35.w,
+                      ).copyWith(bottom: 20.h),
                       child: ValueListenableBuilder(
                         valueListenable: selected,
                         child: const SizedBox.shrink(),
@@ -341,8 +359,9 @@ class _ProjectViewState extends ConsumerState<ProjectView> {
                                     color: selected.value == 0
                                         ? Pallete.blackish
                                         : Pallete.greey,
-                                    fontSize:
-                                        selected.value == 0 ? 20.sp : 15.sp,
+                                    fontSize: selected.value == 0
+                                        ? 20.sp
+                                        : 15.sp,
                                     fontWeight: selected.value == 0
                                         ? FontWeight.w800
                                         : FontWeight.w500,
@@ -375,8 +394,9 @@ class _ProjectViewState extends ConsumerState<ProjectView> {
                                     color: selected.value == 1
                                         ? Pallete.blackish
                                         : Pallete.greey,
-                                    fontSize:
-                                        selected.value == 1 ? 20.sp : 15.sp,
+                                    fontSize: selected.value == 1
+                                        ? 20.sp
+                                        : 15.sp,
                                     fontWeight: selected.value == 1
                                         ? FontWeight.w800
                                         : FontWeight.w500,
@@ -401,10 +421,13 @@ class _ProjectViewState extends ConsumerState<ProjectView> {
                         pageSnapping: true,
                         children: [
                           //! in progress
-                          ref.watch(getTasksInProjectProvider(nname)).when(
+                          ref
+                              .watch(getTasksInProjectProvider(nname))
+                              .when(
                                 data: (tasks) {
-                                  int notDone =
-                                      getNumberOfTasksProgressNumber(tasks);
+                                  int notDone = getNumberOfTasksProgressNumber(
+                                    tasks,
+                                  );
                                   if (notDone == 0) {
                                     return Center(
                                       child: Text(
@@ -419,8 +442,9 @@ class _ProjectViewState extends ConsumerState<ProjectView> {
                                   }
 
                                   return ListView.builder(
-                                    padding:
-                                        EdgeInsets.symmetric(horizontal: 20.w),
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 20.w,
+                                    ),
                                     itemCount: tasks.length,
                                     itemBuilder: (context, index) {
                                       final task = tasks[index];
@@ -432,15 +456,18 @@ class _ProjectViewState extends ConsumerState<ProjectView> {
                                         padding: EdgeInsets.all(15.w),
                                         margin: EdgeInsets.only(bottom: 18.h),
                                         decoration: BoxDecoration(
-                                            color: Pallete.whiteColor,
-                                            borderRadius:
-                                                BorderRadius.circular(10.r),
-                                            boxShadow: const [
-                                              BoxShadow(
-                                                  color: Pallete.greey,
-                                                  blurRadius: 2,
-                                                  offset: Offset(3, 3)),
-                                            ]),
+                                          color: Pallete.whiteColor,
+                                          borderRadius: BorderRadius.circular(
+                                            10.r,
+                                          ),
+                                          boxShadow: const [
+                                            BoxShadow(
+                                              color: Pallete.greey,
+                                              blurRadius: 2,
+                                              offset: Offset(3, 3),
+                                            ),
+                                          ],
+                                        ),
                                         child: Column(
                                           children: [
                                             Row(
@@ -463,23 +490,27 @@ class _ProjectViewState extends ConsumerState<ProjectView> {
                                                     onTap: () {
                                                       ref
                                                           .read(
-                                                              taskProjectControllerProvider
-                                                                  .notifier)
+                                                            taskProjectControllerProvider
+                                                                .notifier,
+                                                          )
                                                           .updateTaskStatusDone(
-                                                              context,
-                                                              task.taskName);
+                                                            context,
+                                                            task.taskName,
+                                                          );
                                                     },
                                                     child: Container(
                                                       padding:
                                                           EdgeInsets.symmetric(
-                                                              horizontal: 7.w,
-                                                              vertical: 5.h),
+                                                            horizontal: 7.w,
+                                                            vertical: 5.h,
+                                                          ),
                                                       decoration: BoxDecoration(
-                                                          color: Colors.green,
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(
-                                                                      10.r)),
+                                                        color: Colors.green,
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              10.r,
+                                                            ),
+                                                      ),
                                                       child: Text(
                                                         'Done ?',
                                                         style: TextStyle(
@@ -496,8 +527,11 @@ class _ProjectViewState extends ConsumerState<ProjectView> {
                                             ),
                                             20.sbH,
                                             ref
-                                                .watch(getUserProvider(
-                                                    task.employeeId))
+                                                .watch(
+                                                  getUserProvider(
+                                                    task.employeeId,
+                                                  ),
+                                                )
                                                 .when(
                                                   data: (employee) {
                                                     return Align(
@@ -517,11 +551,12 @@ class _ProjectViewState extends ConsumerState<ProjectView> {
                                                           ),
                                                           children: [
                                                             TextSpan(
-                                                              text: task.employeeId ==
+                                                              text:
+                                                                  task.employeeId ==
                                                                       user.uid
                                                                   ? 'You'
                                                                   : employee
-                                                                      .firstName,
+                                                                        .firstName,
                                                               style: TextStyle(
                                                                 color: Pallete
                                                                     .blackColor,
@@ -538,8 +573,8 @@ class _ProjectViewState extends ConsumerState<ProjectView> {
                                                   },
                                                   error: (error, stackTrace) =>
                                                       ErrorText(
-                                                          error:
-                                                              error.toString()),
+                                                        error: error.toString(),
+                                                      ),
                                                   loading: () => const Loader(),
                                                 ),
                                           ],
@@ -555,7 +590,9 @@ class _ProjectViewState extends ConsumerState<ProjectView> {
 
                           //! done
                           //! in progress
-                          ref.watch(getTasksInProjectProvider(nname)).when(
+                          ref
+                              .watch(getTasksInProjectProvider(nname))
+                              .when(
                                 data: (tasks) {
                                   int done = getNumberOfTasksDoneNumber(tasks);
                                   if (done == 0) {
@@ -571,8 +608,9 @@ class _ProjectViewState extends ConsumerState<ProjectView> {
                                     );
                                   }
                                   return ListView.builder(
-                                    padding:
-                                        EdgeInsets.symmetric(horizontal: 20.w),
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 20.w,
+                                    ),
                                     itemCount: tasks.length,
                                     itemBuilder: (context, index) {
                                       final task = tasks[index];
@@ -584,15 +622,18 @@ class _ProjectViewState extends ConsumerState<ProjectView> {
                                         padding: EdgeInsets.all(15.w),
                                         margin: EdgeInsets.only(bottom: 18.h),
                                         decoration: BoxDecoration(
-                                            color: Pallete.whiteColor,
-                                            borderRadius:
-                                                BorderRadius.circular(10.r),
-                                            boxShadow: const [
-                                              BoxShadow(
-                                                  color: Pallete.greey,
-                                                  blurRadius: 2,
-                                                  offset: Offset(3, 3)),
-                                            ]),
+                                          color: Pallete.whiteColor,
+                                          borderRadius: BorderRadius.circular(
+                                            10.r,
+                                          ),
+                                          boxShadow: const [
+                                            BoxShadow(
+                                              color: Pallete.greey,
+                                              blurRadius: 2,
+                                              offset: Offset(3, 3),
+                                            ),
+                                          ],
+                                        ),
                                         child: Column(
                                           children: [
                                             Row(
@@ -615,23 +656,27 @@ class _ProjectViewState extends ConsumerState<ProjectView> {
                                                     onTap: () {
                                                       ref
                                                           .read(
-                                                              taskProjectControllerProvider
-                                                                  .notifier)
+                                                            taskProjectControllerProvider
+                                                                .notifier,
+                                                          )
                                                           .updateTaskStatusProgress(
-                                                              context,
-                                                              task.taskName);
+                                                            context,
+                                                            task.taskName,
+                                                          );
                                                     },
                                                     child: Container(
                                                       padding:
                                                           EdgeInsets.symmetric(
-                                                              horizontal: 7.w,
-                                                              vertical: 5.h),
+                                                            horizontal: 7.w,
+                                                            vertical: 5.h,
+                                                          ),
                                                       decoration: BoxDecoration(
-                                                          color: Colors.red,
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(
-                                                                      10.r)),
+                                                        color: Colors.red,
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              10.r,
+                                                            ),
+                                                      ),
                                                       child: Text(
                                                         'Remove ?',
                                                         style: TextStyle(
@@ -648,8 +693,11 @@ class _ProjectViewState extends ConsumerState<ProjectView> {
                                             ),
                                             20.sbH,
                                             ref
-                                                .watch(getUserProvider(
-                                                    task.employeeId))
+                                                .watch(
+                                                  getUserProvider(
+                                                    task.employeeId,
+                                                  ),
+                                                )
                                                 .when(
                                                   data: (employee) {
                                                     return Align(
@@ -669,11 +717,12 @@ class _ProjectViewState extends ConsumerState<ProjectView> {
                                                           ),
                                                           children: [
                                                             TextSpan(
-                                                              text: task.employeeId ==
+                                                              text:
+                                                                  task.employeeId ==
                                                                       user.uid
                                                                   ? 'You'
                                                                   : employee
-                                                                      .firstName,
+                                                                        .firstName,
                                                               style: TextStyle(
                                                                 color: Pallete
                                                                     .blackColor,
@@ -690,8 +739,8 @@ class _ProjectViewState extends ConsumerState<ProjectView> {
                                                   },
                                                   error: (error, stackTrace) =>
                                                       ErrorText(
-                                                          error:
-                                                              error.toString()),
+                                                        error: error.toString(),
+                                                      ),
                                                   loading: () => const Loader(),
                                                 ),
                                           ],

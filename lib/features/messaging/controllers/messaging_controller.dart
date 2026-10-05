@@ -1,4 +1,7 @@
+import 'dart:typed_data';
+import 'package:uuid/uuid.dart';
 import 'package:flutter/material.dart';
+import 'package:stark/utils/snack_bar.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:stark/core/providers/message_reply_provider.dart';
 import 'package:stark/core/providers/storage_repository_provider.dart';
@@ -16,6 +19,7 @@ final getGroupChatStreamProvider = StreamProvider.autoDispose((ref) {
 //! the messaging controller provider
 final messagingControllerProvider =
     StateNotifierProvider<MessagingController, bool>((ref) {
+  ref.watch(userProvider);
   final messagingRepository = ref.watch(messagingRepositoryProvider);
   final storageRepository = ref.watch(storageRepositoryProvider);
   return MessagingController(
@@ -46,16 +50,15 @@ class MessagingController extends StateNotifier<bool> {
   }
 
   //! send text message (manager)
-  void sendTextMessageManager({
+  Future<bool> sendTextMessageManager({
     required BuildContext context,
     required String text,
-    required,
   }) async {
     final messageReply = _ref.read(messageReplyProvider);
     final user = _ref.read(userProvider)!;
     state = true;
 
-    _messagingRepository.sendTextMessage(
+    final result = await _messagingRepository.sendTextMessage(
       text: text,
       orgName: user.organisation,
       senderUserName: '${user.firstName} ${user.lastName}',
@@ -63,6 +66,41 @@ class MessagingController extends StateNotifier<bool> {
       senderProfilePic: user.profilePic,
     );
 
-    state = false;
+    if (mounted) state = false;
+    return result.fold((failure) {
+      if (context.mounted) showSnackBar(context, failure.message);
+      return false;
+    }, (_) {
+      _ref.read(messageReplyProvider.notifier).state = null;
+      return true;
+    });
+  }
+
+  Future<bool> sendImage(
+      {required BuildContext context, required Uint8List bytes}) async {
+    final user = _ref.read(userProvider)!;
+    if (user.organisation.isEmpty) {
+      showSnackBar(context, 'Join an organisation before messaging.');
+      return false;
+    }
+    final upload = await _storageRepository.storeFile(
+        path: 'chat/${Uri.encodeComponent(user.organisation)}',
+        id: const Uuid().v4(),
+        file: null,
+        webFile: bytes);
+    return upload.fold<Future<bool>>((failure) async {
+      if (context.mounted) showSnackBar(context, failure.message);
+      return false;
+    }, (url) async {
+      final sent = await _messagingRepository.sendImageMessage(
+          url: url,
+          orgName: user.organisation,
+          senderUsername: '${user.firstName} ${user.lastName}',
+          senderProfilePic: user.profilePic);
+      return sent.fold((failure) {
+        if (context.mounted) showSnackBar(context, failure.message);
+        return false;
+      }, (_) => true);
+    });
   }
 }

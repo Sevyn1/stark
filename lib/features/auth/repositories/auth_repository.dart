@@ -41,13 +41,13 @@ class AuthRepository {
       UserCredential userCredential;
 
       userCredential = await _auth.createUserWithEmailAndPassword(
-        email: email,
+        email: email.trim().toLowerCase(),
         password: password,
       );
 
       UserModel userModel;
 
-      if (userCredential.additionalUserInfo!.isNewUser) {
+      if (userCredential.additionalUserInfo?.isNewUser ?? true) {
         userModel = UserModel(
           uid: userCredential.user!.uid,
           firstName: firstName,
@@ -59,7 +59,13 @@ class AuthRepository {
           role: '',
           phone: '',
         );
-        await _users.doc(userCredential.user!.uid).set(userModel.toMap());
+        try {
+          await _users.doc(userCredential.user!.uid).set(userModel.toMap());
+        } catch (_) {
+          // Roll back only the newly-created account if its profile cannot save.
+          await userCredential.user!.delete();
+          rethrow;
+        }
       } else {
         return left(Failure('These credentials have been used!'));
       }
@@ -79,7 +85,7 @@ class AuthRepository {
   }) async {
     try {
       UserCredential userCredential = await _auth.signInWithEmailAndPassword(
-        email: email,
+        email: email.trim().toLowerCase(),
         password: password,
       );
 
@@ -94,11 +100,12 @@ class AuthRepository {
   }
 
   Stream<UserModel> getUserData(String uid) {
-    return _users.doc(uid).snapshots().map(
-        (event) => UserModel.fromMap(event.data() as Map<String, dynamic>));
+    return _users.doc(uid).snapshots().map((event) => event.exists
+        ? UserModel.fromMap({...event.data() as Map<String, dynamic>, 'uid': uid})
+        : throw StateError('Profile not found'));
   }
 
-  void logOut() async {
+  Future<void> logOut() async {
     await _auth.signOut();
   }
 

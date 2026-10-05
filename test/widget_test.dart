@@ -78,7 +78,8 @@ void main() {
     await db
         .collection('organisations')
         .doc('demo')
-        .set({'prospectiveEmployees': [], 'employees': []});
+        .set({'prospectiveEmployees': [], 'employees': [], 'managers':['manager']});
+    await db.collection('users').doc('member').set({'organisation':'','isAdmin':false});
     expect((await employees.sendInvite(invite(), 'demo')).isRight(), isTrue);
     expect((await db.collection('invites').doc('member').get()).exists, isTrue);
     expect(
@@ -90,9 +91,10 @@ void main() {
     await db
         .collection('organisations')
         .doc('demo')
-        .set({'prospectiveEmployees': [], 'employees': []});
+        .set({'prospectiveEmployees': [], 'employees': [], 'managers':['manager']});
     await db.collection('users').doc('member').set({'organisation': ''});
     await db.collection('messageGroup').doc('demo').set({'membersUid': []});
+    await db.collection('users').doc('member').set({'organisation':'','isAdmin':false});
     await employees.sendInvite(invite(), 'demo');
     expect((await employees.acceptInvite(invite())).isRight(), isTrue);
     expect(
@@ -112,7 +114,8 @@ void main() {
     await db
         .collection('organisations')
         .doc('demo')
-        .set({'prospectiveEmployees': [], 'employees': []});
+        .set({'prospectiveEmployees': [], 'employees': [], 'managers':['manager']});
+    await db.collection('users').doc('member').set({'organisation':'','isAdmin':false});
     await employees.sendInvite(invite(), 'demo');
     expect((await employees.rejectInvite(invite())).isRight(), isTrue);
     expect(

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:routemaster/routemaster.dart';
+import 'package:stark/theme/stark_icons.dart';
+import 'package:stark/core/app_navigation.dart';
 import 'package:stark/features/auth/controllers/auth_controller.dart';
 import 'package:stark/theme/palette.dart';
 import 'package:stark/utils/app_bar.dart';
@@ -19,7 +19,7 @@ class ProfileView extends ConsumerWidget {
     }
 
     void navigateToEditProfile(BuildContext context) {
-      Routemaster.of(context).push('/edit-profile');
+      AppNavigator.of(context).push('/edit-profile');
     }
 
     void showlogOutDialog(WidgetRef ref, BuildContext context) async {
@@ -40,12 +40,13 @@ class ProfileView extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
+
                   18.sbH,
                   CircleAvatar(
                     radius: 25.w,
                     backgroundColor: Pallete.primaryGreen,
                     child: const Icon(
-                      PhosphorIcons.signOut,
+                      StarkIcons.signOut,
                       color: Color.fromARGB(255, 57, 44, 44),
                     ),
                   ),
@@ -71,7 +72,7 @@ class ProfileView extends ConsumerWidget {
                     padding: 13.padH,
                     child: BButton(
                       onTap: () {
-                        Routemaster.of(context).pop();
+                        AppNavigator.of(context).pop();
                       },
                       height: 41.h,
                       radius: 6.r,
@@ -85,7 +86,7 @@ class ProfileView extends ConsumerWidget {
                     padding: 13.padH,
                     child: TransparentButton(
                       onTap: () {
-                        Routemaster.of(context).pop();
+                        AppNavigator.of(context).pop();
                         logOut(ref);
                       },
                       height: 39.h,
@@ -119,11 +120,12 @@ class ProfileView extends ConsumerWidget {
           width: width(context),
           child: Column(
             children: [
+              TextButton(onPressed: () => AppNavigator.of(context).push('/verify-email'), child: const Text('Verify email')),
               58.sbH,
               CircleAvatar(
                 radius: 50.w,
                 backgroundColor: Pallete.greey,
-                backgroundImage: NetworkImage(user.profilePic),
+                backgroundImage: user.profilePic.isEmpty ? null : NetworkImage(user.profilePic),
               ),
               27.sbH,
               Text(
@@ -155,7 +157,7 @@ class ProfileView extends ConsumerWidget {
                   radius: 30.w,
                   backgroundColor: Pallete.primaryGreen.withOpacity(0.08),
                   child: const Icon(
-                    PhosphorIcons.signOut,
+                    StarkIcons.signOut,
                     color: Pallete.blackTint,
                   ),
                 ),

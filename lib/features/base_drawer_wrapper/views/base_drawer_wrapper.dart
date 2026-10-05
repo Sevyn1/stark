@@ -132,7 +132,7 @@ class _MenuState extends ConsumerState<Menu> with TickerProviderStateMixin {
                             CircleAvatar(
                               radius: 20.w,
                               backgroundColor: Pallete.greey,
-                              backgroundImage: NetworkImage(user.profilePic),
+                              backgroundImage: user.profilePic.isEmpty ? null : NetworkImage(user.profilePic),
                             ),
                             21.sbW,
                             //! name edit profile

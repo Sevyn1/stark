@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
-import 'package:routemaster/routemaster.dart';
+import 'package:stark/core/app_navigation.dart';
 import 'package:stark/features/auth/controllers/auth_controller.dart';
 import 'package:stark/features/tasks_projects/controllers/task_project_controller.dart';
 import 'package:stark/features/tasks_projects/views/task_creation_bottom_sheet.dart';
@@ -28,11 +28,11 @@ class _TasksViewState extends ConsumerState<TasksView> {
 
   //! navigate
   void navigateToCreateProject(BuildContext context) {
-    Routemaster.of(context).push('/create-project');
+    AppNavigator.of(context).push('/create-project');
   }
 
   void navigateToProject(BuildContext context, String projectName) {
-    Routemaster.of(context).push('/project/$projectName');
+    AppNavigator.of(context).push('/project/${Uri.encodeComponent(projectName)}');
   }
 
   String _calculateDaysRemaining(DateTime futureDate) {
@@ -60,9 +60,7 @@ class _TasksViewState extends ConsumerState<TasksView> {
   Widget build(BuildContext context) {
     final projectsStream = ref.watch(getProjectsForOrganisationsProvider);
     return Scaffold(
-      appBar: const MyAppBar(
-        title: 'Tasks',
-      ),
+      appBar: const MyAppBar(title: 'Tasks'),
       body: projectsStream.when(
         data: (projects) {
           if (projects.isEmpty) {
@@ -93,87 +91,86 @@ class _TasksViewState extends ConsumerState<TasksView> {
             children: [
               20.sbH,
               ValueListenableBuilder(
-                  valueListenable: selected,
-                  child: const SizedBox.shrink(),
-                  builder: (context, value, child) {
-                    return Column(
-                      children: [
-                        Padding(
-                          padding: EdgeInsets.only(left: 20.w),
-                          child: Row(
-                            children: [
-                              InkWell(
-                                onTap: () {
-                                  selected.value = 0;
-                                  _controller.animateToPage(
-                                    duration: const Duration(milliseconds: 500),
-                                    curve: Curves.easeInOut,
-                                    0,
-                                  );
-                                },
-                                child: Text(
-                                  'Ongoing Projects',
-                                  style: TextStyle(
-                                    color: selected.value == 0
-                                        ? Pallete.newblueColor
-                                        : Pallete.greey,
-                                    fontSize:
-                                        selected.value == 0 ? 27.sp : 20.sp,
-                                    fontWeight: selected.value == 0
-                                        ? FontWeight.w600
-                                        : FontWeight.w400,
-                                  ),
+                valueListenable: selected,
+                child: const SizedBox.shrink(),
+                builder: (context, value, child) {
+                  return Column(
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.only(left: 20.w),
+                        child: Row(
+                          children: [
+                            InkWell(
+                              onTap: () {
+                                selected.value = 0;
+                                _controller.animateToPage(
+                                  duration: const Duration(milliseconds: 500),
+                                  curve: Curves.easeInOut,
+                                  0,
+                                );
+                              },
+                              child: Text(
+                                'Ongoing Projects',
+                                style: TextStyle(
+                                  color: selected.value == 0
+                                      ? Pallete.newblueColor
+                                      : Pallete.greey,
+                                  fontSize: selected.value == 0 ? 27.sp : 20.sp,
+                                  fontWeight: selected.value == 0
+                                      ? FontWeight.w600
+                                      : FontWeight.w400,
                                 ),
                               ),
-                              10.sbW,
-                              InkWell(
-                                onTap: () => navigateToCreateProject(context),
-                                child: CircleAvatar(
-                                  radius: 15.w,
-                                  backgroundColor: Pallete.primaryGreen,
-                                  child: const Icon(
-                                    Icons.add,
-                                    color: Pallete.whiteColor,
-                                  ),
+                            ),
+                            10.sbW,
+                            InkWell(
+                              onTap: () => navigateToCreateProject(context),
+                              child: CircleAvatar(
+                                radius: 15.w,
+                                backgroundColor: Pallete.primaryGreen,
+                                child: const Icon(
+                                  Icons.add,
+                                  color: Pallete.whiteColor,
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                        15.sbH,
-                        Padding(
-                          padding: EdgeInsets.only(left: 20.w),
-                          child: Row(
-                            children: [
-                              InkWell(
-                                onTap: () {
-                                  selected.value = 1;
-                                  _controller.animateToPage(
-                                    duration: const Duration(milliseconds: 500),
-                                    curve: Curves.easeInOut,
-                                    1,
-                                  );
-                                },
-                                child: Text(
-                                  'Completed Projects',
-                                  style: TextStyle(
-                                    color: selected.value == 1
-                                        ? Pallete.newblueColor
-                                        : Pallete.greey,
-                                    fontSize:
-                                        selected.value == 1 ? 27.sp : 20.sp,
-                                    fontWeight: selected.value == 1
-                                        ? FontWeight.w600
-                                        : FontWeight.w400,
-                                  ),
+                      ),
+                      15.sbH,
+                      Padding(
+                        padding: EdgeInsets.only(left: 20.w),
+                        child: Row(
+                          children: [
+                            InkWell(
+                              onTap: () {
+                                selected.value = 1;
+                                _controller.animateToPage(
+                                  duration: const Duration(milliseconds: 500),
+                                  curve: Curves.easeInOut,
+                                  1,
+                                );
+                              },
+                              child: Text(
+                                'Completed Projects',
+                                style: TextStyle(
+                                  color: selected.value == 1
+                                      ? Pallete.newblueColor
+                                      : Pallete.greey,
+                                  fontSize: selected.value == 1 ? 27.sp : 20.sp,
+                                  fontWeight: selected.value == 1
+                                      ? FontWeight.w600
+                                      : FontWeight.w400,
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                      ],
-                    );
-                  }),
+                      ),
+                    ],
+                  );
+                },
+              ),
 
               //! the projects
               Expanded(
@@ -191,8 +188,9 @@ class _TasksViewState extends ConsumerState<TasksView> {
                     //! ongoing projects
                     projectsStream.when(
                       data: (projectss) {
-                        int notDone =
-                            getNumberOfTProjectsProgressNumber(projectss);
+                        int notDone = getNumberOfTProjectsProgressNumber(
+                          projectss,
+                        );
                         if (notDone == 0) {
                           return Center(
                             child: Text(
@@ -207,8 +205,9 @@ class _TasksViewState extends ConsumerState<TasksView> {
                         }
 
                         return ListView.builder(
-                          padding: EdgeInsets.symmetric(horizontal: 22.w)
-                              .copyWith(top: 20.h),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 22.w,
+                          ).copyWith(top: 20.h),
                           itemCount: projects.length,
                           itemBuilder: (context, index) {
                             final random = Random();
@@ -233,9 +232,10 @@ class _TasksViewState extends ConsumerState<TasksView> {
                                     borderRadius: BorderRadius.circular(10.r),
                                     boxShadow: const [
                                       BoxShadow(
-                                          color: Pallete.greey,
-                                          blurRadius: 2,
-                                          offset: Offset(3, 3)),
+                                        color: Pallete.greey,
+                                        blurRadius: 2,
+                                        offset: Offset(3, 3),
+                                      ),
                                     ],
                                   ),
                                   child: Column(
@@ -256,7 +256,8 @@ class _TasksViewState extends ConsumerState<TasksView> {
                                             TextSpan(
                                               text: DateFormat.yMMMMEEEEd()
                                                   .format(
-                                                      projectt.startDateTime),
+                                                    projectt.startDateTime,
+                                                  ),
                                               style: TextStyle(
                                                 color: Colors.green,
                                                 fontSize: 15.sp,
@@ -289,64 +290,73 @@ class _TasksViewState extends ConsumerState<TasksView> {
                                               height: 10.h,
                                               width: 280.w,
                                               decoration: BoxDecoration(
-                                                  color: Pallete.greey,
-                                                  borderRadius:
-                                                      BorderRadius.circular(
-                                                          10.r)),
+                                                color: Pallete.greey,
+                                                borderRadius:
+                                                    BorderRadius.circular(10.r),
+                                              ),
                                             ),
                                             //! indicator
                                             if (projectt.taskIds.isNotEmpty)
-                                            Consumer(
+                                              Consumer(
                                                 child: const SizedBox.shrink(),
                                                 builder: (context, ref, child) {
                                                   return ref
                                                       .watch(
-                                                          getTasksInProjectProvider(
-                                                              projectt.name))
+                                                        getTasksInProjectProvider(
+                                                          projectt.name,
+                                                        ),
+                                                      )
                                                       .when(
                                                         data: (tasks) {
                                                           int totalTasks =
                                                               tasks.length;
                                                           final numberOfTasksDone =
                                                               getNumberOfTasksDone(
-                                                                  tasks);
+                                                                tasks,
+                                                              );
 
                                                           double percentage =
                                                               (numberOfTasksDone /
-                                                                      totalTasks) *
-                                                                  100;
+                                                                  totalTasks) *
+                                                              100;
                                                           int percent =
                                                               percentage
                                                                   .toInt();
-                                                          
-                                                          
 
                                                           return Align(
                                                             alignment: Alignment
                                                                 .centerLeft,
                                                             child: Container(
                                                               height: 10.h,
-                                                              width: (numberOfTasksDone /
+                                                              width:
+                                                                  (numberOfTasksDone /
                                                                       totalTasks) *
                                                                   280.h,
-                                                              decoration: BoxDecoration(
-                                                                  color: color,
-                                                                  borderRadius:
-                                                                      BorderRadius
-                                                                          .circular(
-                                                                              10.r)),
+                                                              decoration:
+                                                                  BoxDecoration(
+                                                                    color:
+                                                                        color,
+                                                                    borderRadius:
+                                                                        BorderRadius.circular(
+                                                                          10.r,
+                                                                        ),
+                                                                  ),
                                                             ),
                                                           );
                                                         },
-                                                        error: (error,
-                                                                stackTrace) =>
-                                                            ErrorText(
-                                                                error: error
-                                                                    .toString()),
+                                                        error:
+                                                            (
+                                                              error,
+                                                              stackTrace,
+                                                            ) => ErrorText(
+                                                              error: error
+                                                                  .toString(),
+                                                            ),
                                                         loading: () =>
                                                             const Loader(),
                                                       );
-                                                }),
+                                                },
+                                              ),
                                           ],
                                         ),
                                       ),
@@ -366,27 +376,30 @@ class _TasksViewState extends ConsumerState<TasksView> {
                                           ),
                                           //! percentage
                                           if (projectt.taskIds.isNotEmpty)
-                                          Consumer(
+                                            Consumer(
                                               child: const SizedBox.shrink(),
                                               builder: (context, ref, child) {
                                                 return ref
                                                     .watch(
-                                                        getTasksInProjectProvider(
-                                                            projectt.name))
+                                                      getTasksInProjectProvider(
+                                                        projectt.name,
+                                                      ),
+                                                    )
                                                     .when(
                                                       data: (tasks) {
                                                         int totalTasks =
                                                             tasks.length;
                                                         final numberOfTasksDone =
                                                             getNumberOfTasksDone(
-                                                                tasks);
+                                                              tasks,
+                                                            );
 
                                                         double percentage =
                                                             (numberOfTasksDone /
-                                                                    totalTasks) *
-                                                                100;
-                                                        int percent =
-                                                            percentage.toInt();
+                                                                totalTasks) *
+                                                            100;
+                                                        int percent = percentage
+                                                            .toInt();
 
                                                         return Text(
                                                           '${percent}%',
@@ -399,21 +412,21 @@ class _TasksViewState extends ConsumerState<TasksView> {
                                                           ),
                                                         );
                                                       },
-                                                      error: (error,
-                                                              stackTrace) =>
-                                                          ErrorText(
-                                                              error: error
-                                                                  .toString()),
+                                                      error:
+                                                          (error, stackTrace) =>
+                                                              ErrorText(
+                                                                error: error
+                                                                    .toString(),
+                                                              ),
                                                       loading: () =>
                                                           const Loader(),
                                                     );
-                                              }),
+                                              },
+                                            ),
                                         ],
                                       ),
                                       const Spacer(),
-                                      const Divider(
-                                        color: Pallete.greyColor,
-                                      ),
+                                      const Divider(color: Pallete.greyColor),
                                       10.sbH,
                                       Row(
                                         mainAxisAlignment:
@@ -430,9 +443,12 @@ class _TasksViewState extends ConsumerState<TasksView> {
                                               child: Stack(
                                                 children: [
                                                   ref
-                                                      .watch(getUserProvider(
+                                                      .watch(
+                                                        getUserProvider(
                                                           projectt
-                                                              .employeeIds[0]))
+                                                              .employeeIds[0],
+                                                        ),
+                                                      )
                                                       .when(
                                                         data: (data) {
                                                           return CircleAvatar(
@@ -444,16 +460,20 @@ class _TasksViewState extends ConsumerState<TasksView> {
                                                                   Colors.white,
                                                               radius: 13.h,
                                                               backgroundImage:
-                                                                  NetworkImage(data
-                                                                      .profilePic),
+                                                                  NetworkImage(
+                                                                    data.profilePic,
+                                                                  ),
                                                             ),
                                                           );
                                                         },
-                                                        error: (error,
-                                                                stackTrace) =>
-                                                            ErrorText(
-                                                                error: error
-                                                                    .toString()),
+                                                        error:
+                                                            (
+                                                              error,
+                                                              stackTrace,
+                                                            ) => ErrorText(
+                                                              error: error
+                                                                  .toString(),
+                                                            ),
                                                         loading: () =>
                                                             const Loader(),
                                                       ),
@@ -468,9 +488,12 @@ class _TasksViewState extends ConsumerState<TasksView> {
                                               child: Stack(
                                                 children: [
                                                   ref
-                                                      .watch(getUserProvider(
+                                                      .watch(
+                                                        getUserProvider(
                                                           projectt
-                                                              .employeeIds[0]))
+                                                              .employeeIds[0],
+                                                        ),
+                                                      )
                                                       .when(
                                                         data: (data) {
                                                           return CircleAvatar(
@@ -482,48 +505,58 @@ class _TasksViewState extends ConsumerState<TasksView> {
                                                                   Colors.white,
                                                               radius: 13.h,
                                                               backgroundImage:
-                                                                  NetworkImage(data
-                                                                      .profilePic),
+                                                                  NetworkImage(
+                                                                    data.profilePic,
+                                                                  ),
                                                             ),
                                                           );
                                                         },
-                                                        error: (error,
-                                                                stackTrace) =>
-                                                            ErrorText(
-                                                                error: error
-                                                                    .toString()),
+                                                        error:
+                                                            (
+                                                              error,
+                                                              stackTrace,
+                                                            ) => ErrorText(
+                                                              error: error
+                                                                  .toString(),
+                                                            ),
                                                         loading: () =>
                                                             const Loader(),
                                                       ),
                                                   Positioned(
                                                     left: 15.w,
                                                     child: ref
-                                                        .watch(getUserProvider(
+                                                        .watch(
+                                                          getUserProvider(
                                                             projectt
-                                                                .employeeIds[1]))
+                                                                .employeeIds[1],
+                                                          ),
+                                                        )
                                                         .when(
                                                           data: (data) {
                                                             return CircleAvatar(
                                                               backgroundColor:
                                                                   Colors.white,
                                                               radius: 15.h,
-                                                              child:
-                                                                  CircleAvatar(
+                                                              child: CircleAvatar(
                                                                 backgroundColor:
                                                                     Colors
                                                                         .white,
                                                                 radius: 13.h,
                                                                 backgroundImage:
                                                                     NetworkImage(
-                                                                        data.profilePic),
+                                                                      data.profilePic,
+                                                                    ),
                                                               ),
                                                             );
                                                           },
-                                                          error: (error,
-                                                                  stackTrace) =>
-                                                              ErrorText(
-                                                                  error: error
-                                                                      .toString()),
+                                                          error:
+                                                              (
+                                                                error,
+                                                                stackTrace,
+                                                              ) => ErrorText(
+                                                                error: error
+                                                                    .toString(),
+                                                              ),
                                                           loading: () =>
                                                               const Loader(),
                                                         ),
@@ -549,9 +582,12 @@ class _TasksViewState extends ConsumerState<TasksView> {
                                               child: Stack(
                                                 children: [
                                                   ref
-                                                      .watch(getUserProvider(
+                                                      .watch(
+                                                        getUserProvider(
                                                           projectt
-                                                              .employeeIds[0]))
+                                                              .employeeIds[0],
+                                                        ),
+                                                      )
                                                       .when(
                                                         data: (data) {
                                                           return CircleAvatar(
@@ -563,48 +599,58 @@ class _TasksViewState extends ConsumerState<TasksView> {
                                                                   Colors.white,
                                                               radius: 13.h,
                                                               backgroundImage:
-                                                                  NetworkImage(data
-                                                                      .profilePic),
+                                                                  NetworkImage(
+                                                                    data.profilePic,
+                                                                  ),
                                                             ),
                                                           );
                                                         },
-                                                        error: (error,
-                                                                stackTrace) =>
-                                                            ErrorText(
-                                                                error: error
-                                                                    .toString()),
+                                                        error:
+                                                            (
+                                                              error,
+                                                              stackTrace,
+                                                            ) => ErrorText(
+                                                              error: error
+                                                                  .toString(),
+                                                            ),
                                                         loading: () =>
                                                             const Loader(),
                                                       ),
                                                   Positioned(
                                                     left: 15.w,
                                                     child: ref
-                                                        .watch(getUserProvider(
+                                                        .watch(
+                                                          getUserProvider(
                                                             projectt
-                                                                .employeeIds[1]))
+                                                                .employeeIds[1],
+                                                          ),
+                                                        )
                                                         .when(
                                                           data: (data) {
                                                             return CircleAvatar(
                                                               backgroundColor:
                                                                   Colors.white,
                                                               radius: 15.h,
-                                                              child:
-                                                                  CircleAvatar(
+                                                              child: CircleAvatar(
                                                                 backgroundColor:
                                                                     Colors
                                                                         .white,
                                                                 radius: 13.h,
                                                                 backgroundImage:
                                                                     NetworkImage(
-                                                                        data.profilePic),
+                                                                      data.profilePic,
+                                                                    ),
                                                               ),
                                                             );
                                                           },
-                                                          error: (error,
-                                                                  stackTrace) =>
-                                                              ErrorText(
-                                                                  error: error
-                                                                      .toString()),
+                                                          error:
+                                                              (
+                                                                error,
+                                                                stackTrace,
+                                                              ) => ErrorText(
+                                                                error: error
+                                                                    .toString(),
+                                                              ),
                                                           loading: () =>
                                                               const Loader(),
                                                         ),
@@ -612,32 +658,38 @@ class _TasksViewState extends ConsumerState<TasksView> {
                                                   Positioned(
                                                     left: 30.w,
                                                     child: ref
-                                                        .watch(getUserProvider(
+                                                        .watch(
+                                                          getUserProvider(
                                                             projectt
-                                                                .employeeIds[2]))
+                                                                .employeeIds[2],
+                                                          ),
+                                                        )
                                                         .when(
                                                           data: (data) {
                                                             return CircleAvatar(
                                                               backgroundColor:
                                                                   Colors.white,
                                                               radius: 15.h,
-                                                              child:
-                                                                  CircleAvatar(
+                                                              child: CircleAvatar(
                                                                 backgroundColor:
                                                                     Colors
                                                                         .white,
                                                                 radius: 13.h,
                                                                 backgroundImage:
                                                                     NetworkImage(
-                                                                        data.profilePic),
+                                                                      data.profilePic,
+                                                                    ),
                                                               ),
                                                             );
                                                           },
-                                                          error: (error,
-                                                                  stackTrace) =>
-                                                              ErrorText(
-                                                                  error: error
-                                                                      .toString()),
+                                                          error:
+                                                              (
+                                                                error,
+                                                                stackTrace,
+                                                              ) => ErrorText(
+                                                                error: error
+                                                                    .toString(),
+                                                              ),
                                                           loading: () =>
                                                               const Loader(),
                                                         ),
@@ -658,10 +710,10 @@ class _TasksViewState extends ConsumerState<TasksView> {
                                                 context: context,
                                                 builder: (context) => Padding(
                                                   padding: EdgeInsets.only(
-                                                      bottom:
-                                                          MediaQuery.of(context)
-                                                              .viewInsets
-                                                              .bottom),
+                                                    bottom: MediaQuery.of(
+                                                      context,
+                                                    ).viewInsets.bottom,
+                                                  ),
                                                   child: Wrap(
                                                     children: [
                                                       TaskCreationBottomSheet(
@@ -678,24 +730,27 @@ class _TasksViewState extends ConsumerState<TasksView> {
                                           ),
                                           Container(
                                             padding: EdgeInsets.symmetric(
-                                                horizontal: 15.w,
-                                                vertical: 5.h),
+                                              horizontal: 15.w,
+                                              vertical: 5.h,
+                                            ),
                                             decoration: BoxDecoration(
-                                                color: _calculateDaysRemaining(
-                                                          projectt.endDateTime,
-                                                        ) ==
-                                                        'Overdue'
-                                                    ? Pallete.thickRed
-                                                    : color.withOpacity(0.2),
-                                                borderRadius:
-                                                    BorderRadius.circular(
-                                                        20.r)),
+                                              color:
+                                                  _calculateDaysRemaining(
+                                                        projectt.endDateTime,
+                                                      ) ==
+                                                      'Overdue'
+                                                  ? Pallete.thickRed
+                                                  : color.withOpacity(0.2),
+                                              borderRadius:
+                                                  BorderRadius.circular(20.r),
+                                            ),
                                             child: Text(
                                               _calculateDaysRemaining(
                                                 projectt.endDateTime,
                                               ),
                                               style: TextStyle(
-                                                color: _calculateDaysRemaining(
+                                                color:
+                                                    _calculateDaysRemaining(
                                                           projectt.endDateTime,
                                                         ) ==
                                                         'Overdue'
@@ -741,8 +796,9 @@ class _TasksViewState extends ConsumerState<TasksView> {
                         }
 
                         return ListView.builder(
-                          padding: EdgeInsets.symmetric(horizontal: 22.w)
-                              .copyWith(top: 20.h),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 22.w,
+                          ).copyWith(top: 20.h),
                           itemCount: projects.length,
                           itemBuilder: (context, index) {
                             final random = Random();
@@ -767,9 +823,10 @@ class _TasksViewState extends ConsumerState<TasksView> {
                                     borderRadius: BorderRadius.circular(10.r),
                                     boxShadow: const [
                                       BoxShadow(
-                                          color: Pallete.greey,
-                                          blurRadius: 2,
-                                          offset: Offset(3, 3)),
+                                        color: Pallete.greey,
+                                        blurRadius: 2,
+                                        offset: Offset(3, 3),
+                                      ),
                                     ],
                                   ),
                                   child: Column(
@@ -790,7 +847,8 @@ class _TasksViewState extends ConsumerState<TasksView> {
                                             TextSpan(
                                               text: DateFormat.yMMMMEEEEd()
                                                   .format(
-                                                      projectt.startDateTime),
+                                                    projectt.startDateTime,
+                                                  ),
                                               style: TextStyle(
                                                 color: Colors.green,
                                                 fontSize: 15.sp,
@@ -823,61 +881,68 @@ class _TasksViewState extends ConsumerState<TasksView> {
                                               height: 10.h,
                                               width: 280.w,
                                               decoration: BoxDecoration(
-                                                  color: Pallete.greey,
-                                                  borderRadius:
-                                                      BorderRadius.circular(
-                                                          10.r)),
+                                                color: Pallete.greey,
+                                                borderRadius:
+                                                    BorderRadius.circular(10.r),
+                                              ),
                                             ),
                                             //! indicator
                                             Consumer(
-                                                child: const SizedBox.shrink(),
-                                                builder: (context, ref, child) {
-                                                  return ref
-                                                      .watch(
-                                                          getTasksInProjectProvider(
-                                                              projectt.name))
-                                                      .when(
-                                                        data: (tasks) {
-                                                          int totalTasks =
-                                                              tasks.length;
-                                                          final numberOfTasksDone =
-                                                              getNumberOfTasksDone(
-                                                                  tasks);
+                                              child: const SizedBox.shrink(),
+                                              builder: (context, ref, child) {
+                                                return ref
+                                                    .watch(
+                                                      getTasksInProjectProvider(
+                                                        projectt.name,
+                                                      ),
+                                                    )
+                                                    .when(
+                                                      data: (tasks) {
+                                                        int totalTasks =
+                                                            tasks.length;
+                                                        final numberOfTasksDone =
+                                                            getNumberOfTasksDone(
+                                                              tasks,
+                                                            );
 
-                                                          double percentage =
-                                                              (numberOfTasksDone /
-                                                                      totalTasks) *
-                                                                  100;
-                                                          int percent =
-                                                              percentage
-                                                                  .toInt();
+                                                        double percentage =
+                                                            (numberOfTasksDone /
+                                                                totalTasks) *
+                                                            100;
+                                                        int percent = percentage
+                                                            .toInt();
 
-                                                          return Align(
-                                                            alignment: Alignment
-                                                                .centerLeft,
-                                                            child: Container(
-                                                              height: 10.h,
-                                                              width: (numberOfTasksDone /
-                                                                      totalTasks) *
-                                                                  280.h,
-                                                              decoration: BoxDecoration(
+                                                        return Align(
+                                                          alignment: Alignment
+                                                              .centerLeft,
+                                                          child: Container(
+                                                            height: 10.h,
+                                                            width:
+                                                                (numberOfTasksDone /
+                                                                    totalTasks) *
+                                                                280.h,
+                                                            decoration:
+                                                                BoxDecoration(
                                                                   color: color,
                                                                   borderRadius:
-                                                                      BorderRadius
-                                                                          .circular(
-                                                                              10.r)),
-                                                            ),
-                                                          );
-                                                        },
-                                                        error: (error,
-                                                                stackTrace) =>
-                                                            ErrorText(
+                                                                      BorderRadius.circular(
+                                                                        10.r,
+                                                                      ),
+                                                                ),
+                                                          ),
+                                                        );
+                                                      },
+                                                      error:
+                                                          (error, stackTrace) =>
+                                                              ErrorText(
                                                                 error: error
-                                                                    .toString()),
-                                                        loading: () =>
-                                                            const Loader(),
-                                                      );
-                                                }),
+                                                                    .toString(),
+                                                              ),
+                                                      loading: () =>
+                                                          const Loader(),
+                                                    );
+                                              },
+                                            ),
                                           ],
                                         ),
                                       ),
@@ -897,53 +962,56 @@ class _TasksViewState extends ConsumerState<TasksView> {
                                           ),
                                           //! percentage
                                           Consumer(
-                                              child: const SizedBox.shrink(),
-                                              builder: (context, ref, child) {
-                                                return ref
-                                                    .watch(
-                                                        getTasksInProjectProvider(
-                                                            projectt.name))
-                                                    .when(
-                                                      data: (tasks) {
-                                                        int totalTasks =
-                                                            tasks.length;
-                                                        final numberOfTasksDone =
-                                                            getNumberOfTasksDone(
-                                                                tasks);
+                                            child: const SizedBox.shrink(),
+                                            builder: (context, ref, child) {
+                                              return ref
+                                                  .watch(
+                                                    getTasksInProjectProvider(
+                                                      projectt.name,
+                                                    ),
+                                                  )
+                                                  .when(
+                                                    data: (tasks) {
+                                                      int totalTasks =
+                                                          tasks.length;
+                                                      final numberOfTasksDone =
+                                                          getNumberOfTasksDone(
+                                                            tasks,
+                                                          );
 
-                                                        double percentage =
-                                                            (numberOfTasksDone /
-                                                                    totalTasks) *
-                                                                100;
-                                                        int percent =
-                                                            percentage.toInt();
+                                                      double percentage =
+                                                          (numberOfTasksDone /
+                                                              totalTasks) *
+                                                          100;
+                                                      int percent = percentage
+                                                          .toInt();
 
-                                                        return Text(
-                                                          '${percent}%',
-                                                          style: TextStyle(
-                                                            color: Pallete
-                                                                .newblueColor,
-                                                            fontSize: 14.sp,
-                                                            fontWeight:
-                                                                FontWeight.w700,
-                                                          ),
-                                                        );
-                                                      },
-                                                      error: (error,
-                                                              stackTrace) =>
-                                                          ErrorText(
+                                                      return Text(
+                                                        '${percent}%',
+                                                        style: TextStyle(
+                                                          color: Pallete
+                                                              .newblueColor,
+                                                          fontSize: 14.sp,
+                                                          fontWeight:
+                                                              FontWeight.w700,
+                                                        ),
+                                                      );
+                                                    },
+                                                    error:
+                                                        (error, stackTrace) =>
+                                                            ErrorText(
                                                               error: error
-                                                                  .toString()),
-                                                      loading: () =>
-                                                          const Loader(),
-                                                    );
-                                              }),
+                                                                  .toString(),
+                                                            ),
+                                                    loading: () =>
+                                                        const Loader(),
+                                                  );
+                                            },
+                                          ),
                                         ],
                                       ),
                                       const Spacer(),
-                                      const Divider(
-                                        color: Pallete.greyColor,
-                                      ),
+                                      const Divider(color: Pallete.greyColor),
                                       10.sbH,
                                       Row(
                                         mainAxisAlignment:
@@ -960,9 +1028,12 @@ class _TasksViewState extends ConsumerState<TasksView> {
                                               child: Stack(
                                                 children: [
                                                   ref
-                                                      .watch(getUserProvider(
+                                                      .watch(
+                                                        getUserProvider(
                                                           projectt
-                                                              .employeeIds[0]))
+                                                              .employeeIds[0],
+                                                        ),
+                                                      )
                                                       .when(
                                                         data: (data) {
                                                           return CircleAvatar(
@@ -974,16 +1045,20 @@ class _TasksViewState extends ConsumerState<TasksView> {
                                                                   Colors.white,
                                                               radius: 13.h,
                                                               backgroundImage:
-                                                                  NetworkImage(data
-                                                                      .profilePic),
+                                                                  NetworkImage(
+                                                                    data.profilePic,
+                                                                  ),
                                                             ),
                                                           );
                                                         },
-                                                        error: (error,
-                                                                stackTrace) =>
-                                                            ErrorText(
-                                                                error: error
-                                                                    .toString()),
+                                                        error:
+                                                            (
+                                                              error,
+                                                              stackTrace,
+                                                            ) => ErrorText(
+                                                              error: error
+                                                                  .toString(),
+                                                            ),
                                                         loading: () =>
                                                             const Loader(),
                                                       ),
@@ -998,9 +1073,12 @@ class _TasksViewState extends ConsumerState<TasksView> {
                                               child: Stack(
                                                 children: [
                                                   ref
-                                                      .watch(getUserProvider(
+                                                      .watch(
+                                                        getUserProvider(
                                                           projectt
-                                                              .employeeIds[0]))
+                                                              .employeeIds[0],
+                                                        ),
+                                                      )
                                                       .when(
                                                         data: (data) {
                                                           return CircleAvatar(
@@ -1012,48 +1090,58 @@ class _TasksViewState extends ConsumerState<TasksView> {
                                                                   Colors.white,
                                                               radius: 13.h,
                                                               backgroundImage:
-                                                                  NetworkImage(data
-                                                                      .profilePic),
+                                                                  NetworkImage(
+                                                                    data.profilePic,
+                                                                  ),
                                                             ),
                                                           );
                                                         },
-                                                        error: (error,
-                                                                stackTrace) =>
-                                                            ErrorText(
-                                                                error: error
-                                                                    .toString()),
+                                                        error:
+                                                            (
+                                                              error,
+                                                              stackTrace,
+                                                            ) => ErrorText(
+                                                              error: error
+                                                                  .toString(),
+                                                            ),
                                                         loading: () =>
                                                             const Loader(),
                                                       ),
                                                   Positioned(
                                                     left: 15.w,
                                                     child: ref
-                                                        .watch(getUserProvider(
+                                                        .watch(
+                                                          getUserProvider(
                                                             projectt
-                                                                .employeeIds[1]))
+                                                                .employeeIds[1],
+                                                          ),
+                                                        )
                                                         .when(
                                                           data: (data) {
                                                             return CircleAvatar(
                                                               backgroundColor:
                                                                   Colors.white,
                                                               radius: 15.h,
-                                                              child:
-                                                                  CircleAvatar(
+                                                              child: CircleAvatar(
                                                                 backgroundColor:
                                                                     Colors
                                                                         .white,
                                                                 radius: 13.h,
                                                                 backgroundImage:
                                                                     NetworkImage(
-                                                                        data.profilePic),
+                                                                      data.profilePic,
+                                                                    ),
                                                               ),
                                                             );
                                                           },
-                                                          error: (error,
-                                                                  stackTrace) =>
-                                                              ErrorText(
-                                                                  error: error
-                                                                      .toString()),
+                                                          error:
+                                                              (
+                                                                error,
+                                                                stackTrace,
+                                                              ) => ErrorText(
+                                                                error: error
+                                                                    .toString(),
+                                                              ),
                                                           loading: () =>
                                                               const Loader(),
                                                         ),
@@ -1079,9 +1167,12 @@ class _TasksViewState extends ConsumerState<TasksView> {
                                               child: Stack(
                                                 children: [
                                                   ref
-                                                      .watch(getUserProvider(
+                                                      .watch(
+                                                        getUserProvider(
                                                           projectt
-                                                              .employeeIds[0]))
+                                                              .employeeIds[0],
+                                                        ),
+                                                      )
                                                       .when(
                                                         data: (data) {
                                                           return CircleAvatar(
@@ -1093,48 +1184,58 @@ class _TasksViewState extends ConsumerState<TasksView> {
                                                                   Colors.white,
                                                               radius: 13.h,
                                                               backgroundImage:
-                                                                  NetworkImage(data
-                                                                      .profilePic),
+                                                                  NetworkImage(
+                                                                    data.profilePic,
+                                                                  ),
                                                             ),
                                                           );
                                                         },
-                                                        error: (error,
-                                                                stackTrace) =>
-                                                            ErrorText(
-                                                                error: error
-                                                                    .toString()),
+                                                        error:
+                                                            (
+                                                              error,
+                                                              stackTrace,
+                                                            ) => ErrorText(
+                                                              error: error
+                                                                  .toString(),
+                                                            ),
                                                         loading: () =>
                                                             const Loader(),
                                                       ),
                                                   Positioned(
                                                     left: 15.w,
                                                     child: ref
-                                                        .watch(getUserProvider(
+                                                        .watch(
+                                                          getUserProvider(
                                                             projectt
-                                                                .employeeIds[1]))
+                                                                .employeeIds[1],
+                                                          ),
+                                                        )
                                                         .when(
                                                           data: (data) {
                                                             return CircleAvatar(
                                                               backgroundColor:
                                                                   Colors.white,
                                                               radius: 15.h,
-                                                              child:
-                                                                  CircleAvatar(
+                                                              child: CircleAvatar(
                                                                 backgroundColor:
                                                                     Colors
                                                                         .white,
                                                                 radius: 13.h,
                                                                 backgroundImage:
                                                                     NetworkImage(
-                                                                        data.profilePic),
+                                                                      data.profilePic,
+                                                                    ),
                                                               ),
                                                             );
                                                           },
-                                                          error: (error,
-                                                                  stackTrace) =>
-                                                              ErrorText(
-                                                                  error: error
-                                                                      .toString()),
+                                                          error:
+                                                              (
+                                                                error,
+                                                                stackTrace,
+                                                              ) => ErrorText(
+                                                                error: error
+                                                                    .toString(),
+                                                              ),
                                                           loading: () =>
                                                               const Loader(),
                                                         ),
@@ -1142,32 +1243,38 @@ class _TasksViewState extends ConsumerState<TasksView> {
                                                   Positioned(
                                                     left: 30.w,
                                                     child: ref
-                                                        .watch(getUserProvider(
+                                                        .watch(
+                                                          getUserProvider(
                                                             projectt
-                                                                .employeeIds[2]))
+                                                                .employeeIds[2],
+                                                          ),
+                                                        )
                                                         .when(
                                                           data: (data) {
                                                             return CircleAvatar(
                                                               backgroundColor:
                                                                   Colors.white,
                                                               radius: 15.h,
-                                                              child:
-                                                                  CircleAvatar(
+                                                              child: CircleAvatar(
                                                                 backgroundColor:
                                                                     Colors
                                                                         .white,
                                                                 radius: 13.h,
                                                                 backgroundImage:
                                                                     NetworkImage(
-                                                                        data.profilePic),
+                                                                      data.profilePic,
+                                                                    ),
                                                               ),
                                                             );
                                                           },
-                                                          error: (error,
-                                                                  stackTrace) =>
-                                                              ErrorText(
-                                                                  error: error
-                                                                      .toString()),
+                                                          error:
+                                                              (
+                                                                error,
+                                                                stackTrace,
+                                                              ) => ErrorText(
+                                                                error: error
+                                                                    .toString(),
+                                                              ),
                                                           loading: () =>
                                                               const Loader(),
                                                         ),
@@ -1183,10 +1290,13 @@ class _TasksViewState extends ConsumerState<TasksView> {
                                             onTap: () {
                                               ref
                                                   .read(
-                                                      taskProjectControllerProvider
-                                                          .notifier)
+                                                    taskProjectControllerProvider
+                                                        .notifier,
+                                                  )
                                                   .updateProjectStatusProgress(
-                                                      context, projectt.name);
+                                                    context,
+                                                    projectt.name,
+                                                  );
                                             },
                                             isText: false,
                                             item: Center(
@@ -1214,13 +1324,14 @@ class _TasksViewState extends ConsumerState<TasksView> {
                                           ),
                                           Container(
                                             padding: EdgeInsets.symmetric(
-                                                horizontal: 15.w,
-                                                vertical: 5.h),
+                                              horizontal: 15.w,
+                                              vertical: 5.h,
+                                            ),
                                             decoration: BoxDecoration(
-                                                color: color.withOpacity(0.2),
-                                                borderRadius:
-                                                    BorderRadius.circular(
-                                                        20.r)),
+                                              color: color.withOpacity(0.2),
+                                              borderRadius:
+                                                  BorderRadius.circular(20.r),
+                                            ),
                                             child: Text(
                                               'Completed',
                                               style: TextStyle(

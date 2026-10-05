@@ -25,12 +25,31 @@ class EmployeeRepository {
   //! send invitation to employee
   FutureVoid sendInvite(InviteModel invite, String orgName) async {
     try {
-      final batch = _firestore.batch();
-      batch.update(_organisations.doc(orgName), {
-        'prospectiveEmployees': FieldValue.arrayUnion([invite.receiverId]),
+      await _firestore.runTransaction((transaction) async {
+        final orgRef = _organisations.doc(orgName);
+        final inviteRef = _invites.doc(invite.receiverId);
+        final org = await transaction.get(orgRef);
+        final employee = await transaction.get(_users.doc(invite.receiverId));
+        final current = await transaction.get(inviteRef);
+        final orgData = org.data() as Map<String, dynamic>?;
+        final profile = employee.data() as Map<String, dynamic>?;
+        if (!org.exists ||
+            !(orgData?['managers'] as List? ?? []).contains(invite.managerId))
+          throw StateError(
+              'Only this organisation’s manager can invite employees.');
+        if (!employee.exists ||
+            profile?['isAdmin'] != false ||
+            (profile?['organisation'] ?? '') != '')
+          throw StateError(
+              'Choose an employee who has not joined another organisation.');
+        if (current.exists &&
+            (current.data() as Map<String, dynamic>)['status'] == 'pending')
+          throw StateError('This employee already has a pending invitation.');
+        transaction.update(orgRef, {
+          'prospectiveEmployees': FieldValue.arrayUnion([invite.receiverId])
+        });
+        transaction.set(inviteRef, invite.toMap());
       });
-      batch.set(_invites.doc(invite.receiverId), invite.toMap());
-      await batch.commit();
       return right(null);
     } catch (e) {
       return left(Failure(e.toString()));
@@ -83,18 +102,37 @@ class EmployeeRepository {
 
   FutureVoid acceptInvite(InviteModel invite) async {
     try {
-      final batch = _firestore.batch();
-      batch.update(_invites.doc(invite.receiverId), {'status': 'accepted'});
-      batch.update(_users.doc(invite.receiverId),
-          {'organisation': invite.organisationName});
-      batch.update(_messageGroup.doc(invite.organisationName), {
-        'membersUid': FieldValue.arrayUnion([invite.receiverId]),
+      await _firestore.runTransaction((transaction) async {
+        final inviteRef = _invites.doc(invite.receiverId);
+        final userRef = _users.doc(invite.receiverId);
+        final stored = await transaction.get(inviteRef);
+        final user = await transaction.get(userRef);
+        final data = stored.data() as Map<String, dynamic>?;
+        final profile = user.data() as Map<String, dynamic>?;
+        if (!stored.exists ||
+            data?['organisationName'] != invite.organisationName)
+          throw StateError('Invitation no longer exists.');
+        if (data?['status'] == 'accepted') return;
+        if (data?['status'] != 'pending' ||
+            !user.exists ||
+            (profile?['organisation'] ?? '') != '')
+          throw StateError('Invitation can no longer be accepted.');
+        transaction.update(inviteRef, {
+          'status': 'accepted',
+          'actionAt': DateTime.now().millisecondsSinceEpoch
+        });
+        transaction.update(userRef, {'organisation': invite.organisationName});
+        transaction.set(
+            _messageGroup.doc(invite.organisationName),
+            {
+              'membersUid': FieldValue.arrayUnion([invite.receiverId])
+            },
+            SetOptions(merge: true));
+        transaction.update(_organisations.doc(invite.organisationName), {
+          'prospectiveEmployees': FieldValue.arrayRemove([invite.receiverId]),
+          'employees': FieldValue.arrayUnion([invite.receiverId]),
+        });
       });
-      batch.update(_organisations.doc(invite.organisationName), {
-        'prospectiveEmployees': FieldValue.arrayRemove([invite.receiverId]),
-        'employees': FieldValue.arrayUnion([invite.receiverId]),
-      });
-      await batch.commit();
       return right(null);
     } catch (e) {
       return left(Failure(e.toString()));
@@ -120,27 +158,16 @@ class EmployeeRepository {
 
   //! search for employees
   Stream<List<UserModel>> searchForEmployeesToInvite(String query) {
-    return _users
-        .where(
-          'email',
-          isGreaterThanOrEqualTo: query.isEmpty ? 0 : query.toLowerCase(),
-          isLessThan: query.isEmpty
-              ? null
-              : query.substring(0, query.length - 1) +
-                  String.fromCharCode(
-                    query.codeUnitAt(query.length - 1) + 1,
-                  ),
-        )
-        // .where('isAdmin', isEqualTo: false)
-        .snapshots()
-        .map((event) {
-      List<UserModel> employees = [];
-      for (var employee in event.docs) {
-        employees
-            .add(UserModel.fromMap(employee.data() as Map<String, dynamic>));
-      }
-      return employees;
-    });
+    final prefix = query.trim().toLowerCase();
+    Query users = _users
+        .where('isAdmin', isEqualTo: false)
+        .where('organisation', isEqualTo: '');
+    if (prefix.isNotEmpty)
+      users = users.where('email',
+          isGreaterThanOrEqualTo: prefix, isLessThanOrEqualTo: '$prefix\uf8ff');
+    return users.snapshots().map((event) => event.docs
+        .map((doc) => UserModel.fromMap(doc.data() as Map<String, dynamic>))
+        .toList());
   }
 
   CollectionReference get _invites =>

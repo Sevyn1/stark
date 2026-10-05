@@ -21,9 +21,11 @@ class CreateProjectView extends ConsumerStatefulWidget {
 class _CreateProjectViewState extends ConsumerState<CreateProjectView> {
   final TextEditingController _projectNameController = TextEditingController();
   DateTime _selectedDate = DateTime.now();
-//!
+  //!
   void createProject(String projectName, DateTime endDateTime) {
-    ref.read(taskProjectControllerProvider.notifier).createProject(
+    ref
+        .read(taskProjectControllerProvider.notifier)
+        .createProject(
           context: context,
           name: projectName,
           endDateTime: endDateTime,
@@ -47,9 +49,10 @@ class _CreateProjectViewState extends ConsumerState<CreateProjectView> {
         title: Text(
           'Create Project',
           style: TextStyle(
-              color: Pallete.blackish,
-              fontSize: 22.sp,
-              fontWeight: FontWeight.bold),
+            color: Pallete.blackish,
+            fontSize: 22.sp,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
       body: isLoading
@@ -71,26 +74,24 @@ class _CreateProjectViewState extends ConsumerState<CreateProjectView> {
                     //       selection: _nameController.selection);
                     // },
                     decoration: InputDecoration(
-                        hintText: 'Project Name',
-                        hintStyle: TextStyle(fontSize: 15.sp),
-                        filled: true,
-                        fillColor: Pallete.greey.withOpacity(0.3),
-                        border: OutlineInputBorder(
-                          borderSide:
-                              const BorderSide(color: Colors.transparent),
-                          borderRadius: BorderRadius.circular(10.r),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderSide:
-                              const BorderSide(color: Colors.transparent),
-                          borderRadius: BorderRadius.circular(10.r),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide:
-                              const BorderSide(color: Colors.transparent),
-                          borderRadius: BorderRadius.circular(10.r),
-                        ),
-                        contentPadding: EdgeInsets.all(18.w)),
+                      hintText: 'Project Name',
+                      hintStyle: TextStyle(fontSize: 15.sp),
+                      filled: true,
+                      fillColor: Pallete.greey.withOpacity(0.3),
+                      border: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.transparent),
+                        borderRadius: BorderRadius.circular(10.r),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.transparent),
+                        borderRadius: BorderRadius.circular(10.r),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Colors.transparent),
+                        borderRadius: BorderRadius.circular(10.r),
+                      ),
+                      contentPadding: EdgeInsets.all(18.w),
+                    ),
                     maxLength: 21,
                   ),
                   20.sbH,
@@ -135,9 +136,10 @@ class _CreateProjectViewState extends ConsumerState<CreateProjectView> {
                             // '${_selectedDate.month}/${_selectedDate.day}/${_selectedDate.year}  ${_selectedDate.hour}:${_selectedDate.minute}',
                             '${DateFormat.yMMMEd().format(_selectedDate)} : ${DateFormat.jm().format(_selectedDate)}',
                             style: TextStyle(
-                                color: Pallete.blackTint,
-                                fontSize: 15.sp,
-                                fontWeight: FontWeight.bold),
+                              color: Pallete.blackTint,
+                              fontSize: 15.sp,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                           const Icon(
                             Icons.arrow_drop_down_sharp,

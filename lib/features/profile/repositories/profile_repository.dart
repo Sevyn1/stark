@@ -18,9 +18,16 @@ class UserProfileRepository {
 
   FutureVoid editProfile(UserModel user) async {
     try {
-      return right(_users.doc(user.uid).update(user.toMap()));
+      await _users.doc(user.uid).update({
+        'firstName': user.firstName.trim(),
+        'lastName': user.lastName.trim(),
+        'phone': user.phone.trim(),
+        'profilePic': user.profilePic,
+        'role': user.role.trim()
+      });
+      return right(null);
     } on FirebaseException catch (e) {
-      throw e.message!;
+      return left(Failure(e.message ?? e.code));
     } catch (e) {
       return left(Failure(e.toString()));
     }
