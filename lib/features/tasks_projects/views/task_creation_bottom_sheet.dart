@@ -155,7 +155,7 @@ class _TaskCreationBottomSheetState
                             log('${selectedEmployeeId.value} 1');
                             selectedEmployeeId.value =
                                 employees[selectedEmployeeIndex.value].uid;
-          
+
                             // });
                           },
                           children: List<Widget>.generate(
@@ -169,8 +169,8 @@ class _TaskCreationBottomSheetState
                         ),
                       ),
                       child: Container(
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 7.w, vertical: 10.h),
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 7.w, vertical: 10.h),
                         decoration: BoxDecoration(
                           color: Pallete.blueColor,
                           borderRadius: BorderRadius.circular(5.r),
@@ -254,7 +254,7 @@ class _TaskCreationBottomSheetState
                   ),
                 ),
                 12.sbH,
-          
+
                 //! description
                 TextField(
                   controller: _descriptionController,
@@ -279,15 +279,16 @@ class _TaskCreationBottomSheetState
                   // maxLength: 21,
                   maxLines: 7,
                 ),
-          
+
                 // //!
                 50.sbH,
                 isLoading
                     ? const Loader()
                     : BButton(
                         onTap: () {
-                          if (_taskNameController.text.isNotEmpty ||
-                              _descriptionController.text.isNotEmpty) {
+                          if (_taskNameController.text.trim().isNotEmpty &&
+                              _descriptionController.text.trim().isNotEmpty &&
+                              selectedEmployeeId.value.isNotEmpty) {
                             ref
                                 .read(taskProjectControllerProvider.notifier)
                                 .createTask(

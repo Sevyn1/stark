@@ -70,6 +70,7 @@ dependencies:
   audioplayers: ^3.0.1
 
 dev_dependencies:
+  fake_cloud_firestore: ^2.4.1
   flutter_launcher_icons: ^0.12.0
   simple_animations: ^5.0.0+3
   flutter_test:

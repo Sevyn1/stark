@@ -22,34 +22,36 @@ class TaskProjectRepository {
   //! create project
   FutureVoid createProject(ProjectModel project) async {
     try {
-      var projectDoc = await _projects.doc(project.name).get();
-      if (projectDoc.exists) {
-        throw 'Project with the same name exists';
-      }
-
-      return right(_projects.doc(project.name).set(project.toMap()));
-    } on FirebaseException catch (e) {
-      throw e.message!;
+      await _firestore.runTransaction((transaction) async {
+        final reference = _projects.doc(project.name);
+        final snapshot = await transaction.get(reference);
+        if (snapshot.exists)
+          throw StateError('Project with the same name exists');
+        transaction.set(reference, project.toMap());
+      });
+      return right(null);
     } catch (e) {
       return left(Failure(e.toString()));
     }
   }
 
-  //! create tasks
   FutureVoid createTask(TaskModel task) async {
     try {
-      var taskDoc = await _tasks.doc(task.taskName).get();
-      if (taskDoc.exists) {
-        throw 'Project with the same name exists';
-      }
-      await _projects.doc(task.projectName).update({
-        'employeeIds': FieldValue.arrayUnion([task.employeeId]),
-        'taskIds': FieldValue.arrayUnion([task.taskName]),
+      await _firestore.runTransaction((transaction) async {
+        final taskReference = _tasks.doc(task.taskName);
+        final projectReference = _projects.doc(task.projectName);
+        final existingTask = await transaction.get(taskReference);
+        final project = await transaction.get(projectReference);
+        if (existingTask.exists)
+          throw StateError('Task with the same name exists');
+        if (!project.exists) throw StateError('Project does not exist');
+        transaction.update(projectReference, {
+          'employeeIds': FieldValue.arrayUnion([task.employeeId]),
+          'taskIds': FieldValue.arrayUnion([task.taskName]),
+        });
+        transaction.set(taskReference, task.toMap());
       });
-
-      return right(_tasks.doc(task.taskName).set(task.toMap()));
-    } on FirebaseException catch (e) {
-      throw e.message!;
+      return right(null);
     } catch (e) {
       return left(Failure(e.toString()));
     }
@@ -119,7 +121,7 @@ class TaskProjectRepository {
   Stream<List<TaskModel>> getOngoingTasksInProjects(String projectName) {
     return _tasks
         .where('projectName', isEqualTo: projectName)
-        .where('status')
+        .where('status', isEqualTo: 'ongoing')
         .snapshots()
         .map(
       (event) {
@@ -147,11 +149,12 @@ class TaskProjectRepository {
   //! update project done
   FutureVoid updateProjectStatusDone(String projectName) async {
     try {
-      return right(_projects.doc(projectName).update({
+      await _projects.doc(projectName).update({
         'status': 'done',
-      }));
+      });
+      return right(null);
     } on FirebaseException catch (e) {
-      throw e.message!;
+      return left(Failure(e.message ?? 'Database operation failed'));
     } catch (e) {
       return left(Failure(e.toString()));
     }
@@ -160,11 +163,12 @@ class TaskProjectRepository {
   //! update project not done
   FutureVoid updateProjectStatusProgress(String projectName) async {
     try {
-      return right(_projects.doc(projectName).update({
+      await _projects.doc(projectName).update({
         'status': 'ongoing',
-      }));
+      });
+      return right(null);
     } on FirebaseException catch (e) {
-      throw e.message!;
+      return left(Failure(e.message ?? 'Database operation failed'));
     } catch (e) {
       return left(Failure(e.toString()));
     }
@@ -173,11 +177,12 @@ class TaskProjectRepository {
   //! update task status done
   FutureVoid updateTaskStatusDone(String taskName) async {
     try {
-      return right(_tasks.doc(taskName).update({
+      await _tasks.doc(taskName).update({
         'status': 'done',
-      }));
+      });
+      return right(null);
     } on FirebaseException catch (e) {
-      throw e.message!;
+      return left(Failure(e.message ?? 'Database operation failed'));
     } catch (e) {
       return left(Failure(e.toString()));
     }
@@ -186,11 +191,12 @@ class TaskProjectRepository {
   //! update task status in progress
   FutureVoid updateTaskStatusProgress(String taskName) async {
     try {
-      return right(_tasks.doc(taskName).update({
-        'status': 'not started',
-      }));
+      await _tasks.doc(taskName).update({
+        'status': 'ongoing',
+      });
+      return right(null);
     } on FirebaseException catch (e) {
-      throw e.message!;
+      return left(Failure(e.message ?? 'Database operation failed'));
     } catch (e) {
       return left(Failure(e.toString()));
     }

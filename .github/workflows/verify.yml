@@ -1,0 +1,17 @@
+name: Flutter verification
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.7.12'
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter test --reporter expanded
+      - run: flutter build web

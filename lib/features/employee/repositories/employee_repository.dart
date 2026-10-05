@@ -25,12 +25,13 @@ class EmployeeRepository {
   //! send invitation to employee
   FutureVoid sendInvite(InviteModel invite, String orgName) async {
     try {
-      _organisations.doc(orgName).update({
-        'prospectiveEmployees': FieldValue.arrayUnion([invite.receiverId])
+      final batch = _firestore.batch();
+      batch.update(_organisations.doc(orgName), {
+        'prospectiveEmployees': FieldValue.arrayUnion([invite.receiverId]),
       });
-      return right(_invites.doc(invite.receiverId).set(invite.toMap()));
-    } on FirebaseException catch (e) {
-      throw e.message!;
+      batch.set(_invites.doc(invite.receiverId), invite.toMap());
+      await batch.commit();
+      return right(null);
     } catch (e) {
       return left(Failure(e.toString()));
     }
@@ -68,12 +69,13 @@ class EmployeeRepository {
   //! reject invitaion
   FutureVoid rejectInvite(InviteModel invite) async {
     try {
-      _organisations.doc(invite.organisationName).update({
-        'prospectiveEmployees': FieldValue.arrayRemove([invite.receiverId])
+      final batch = _firestore.batch();
+      batch.update(_organisations.doc(invite.organisationName), {
+        'prospectiveEmployees': FieldValue.arrayRemove([invite.receiverId]),
       });
-      return right(_invites.doc(invite.receiverId).delete());
-    } on FirebaseException catch (e) {
-      throw e.message!;
+      batch.delete(_invites.doc(invite.receiverId));
+      await batch.commit();
+      return right(null);
     } catch (e) {
       return left(Failure(e.toString()));
     }
@@ -81,23 +83,19 @@ class EmployeeRepository {
 
   FutureVoid acceptInvite(InviteModel invite) async {
     try {
-      _invites.doc(invite.receiverId).update({
-        'status': 'accepted',
+      final batch = _firestore.batch();
+      batch.update(_invites.doc(invite.receiverId), {'status': 'accepted'});
+      batch.update(_users.doc(invite.receiverId),
+          {'organisation': invite.organisationName});
+      batch.update(_messageGroup.doc(invite.organisationName), {
+        'membersUid': FieldValue.arrayUnion([invite.receiverId]),
       });
-      _organisations.doc(invite.organisationName).update({
-        'prospectiveEmployees': FieldValue.arrayRemove([invite.receiverId])
-      });
-      _users
-          .doc(invite.receiverId)
-          .update({'organisation': invite.organisationName});
-      _messageGroup.doc(invite.organisationName).update({
-        'membersUid': FieldValue.arrayUnion([invite.receiverId])
-      });
-      return right(_organisations.doc(invite.organisationName).update({
+      batch.update(_organisations.doc(invite.organisationName), {
+        'prospectiveEmployees': FieldValue.arrayRemove([invite.receiverId]),
         'employees': FieldValue.arrayUnion([invite.receiverId]),
-      }));
-    } on FirebaseException catch (e) {
-      throw e.message!;
+      });
+      await batch.commit();
+      return right(null);
     } catch (e) {
       return left(Failure(e.toString()));
     }

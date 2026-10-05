@@ -56,7 +56,7 @@ class _MyAppState extends ConsumerState<MyApp> {
         splitScreenMode: false,
         builder: (context, child) {
           return MaterialApp.router(
-            title: 'Flutter Demo',
+            title: 'Stark — Employee Management',
             debugShowCheckedModeBanner: false,
             theme: ThemeData(
               primarySwatch: Colors.blue,
