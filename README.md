@@ -42,11 +42,14 @@ All fixture accounts use **StarkDemo123!**, a public development password for th
 
 ## Application workflows
 
+The workspace now uses a desktop navigation rail and a mobile navigation bar. Employee Overview provides today’s check-in/out action, assigned tasks and recent attendance. Manager Overview opens the workday and reviews live team arrivals. Tasks supports assigned-task completion; Profile exposes editing, verification and sign-out.
+
+
 - Manager and employee registration, validated sign-in, sign-out, recovery-link requests and email-verification requests/status checks.
 - Manager workspace creation with membership and chat metadata committed together.
 - Search eligible employees, send invitations, accept/reject invitations, view members and remove an employee.
 - Create projects, assign tasks to existing workspace members, update task status, complete projects after their tasks are done and reopen completed projects.
-- Open organisation-specific daily attendance, sign employees, see present/absent and early/late totals, and retain previous days.
+- Managers open daily attendance with a chosen start time. Employees check themselves in and out once; Firebase supplies the timestamps. Managers review on-time/late arrivals and pending check-ins. Workdays use America/Toronto with daylight-saving changes, and employees can read only their own attendance entries.
 - Team text messages and replies; local emulator image attachments up to 5 MB. Failed text sends retain the draft. The unfinished microphone and camera controls were replaced with working text/image actions.
 - Edit names, job title and phone; profile photos are available in local emulator mode. These updates cannot overwrite account IDs, manager authority or workspace membership through the profile repository.
 
@@ -100,7 +103,7 @@ flutter analyze --no-fatal-infos --no-fatal-warnings
 flutter build web --dart-define=LOCAL_DEMO=true --pwa-strategy=none
 ```
 
-The regression suite covers application data workflows, membership writes, duplicates, task assignment, scoped records, attendance history/idempotency, protected profile fields and message persistence. Fake Firestore tests do not simulate real transaction contention or production security rules. Browser/native verification results are recorded separately as they are completed.
+The regression suite includes responsive employee/manager screens, protected self check-in/checkout, Toronto midnight and DST boundaries, as well as application data workflows, membership writes, duplicates, task assignment, scoped records, attendance history/idempotency, protected profile fields and message persistence. Fake Firestore tests do not simulate real transaction contention or production security rules. Browser/native verification results are recorded separately as they are completed.
 
 The `*.demo.rules` files are emulator-only convenience rules. Do not deploy them as production rules. A live build requires your own Firebase configuration and reviewed rules, permissions and indexes. A live client smoke check verified signup, atomic workspace creation, invitation acceptance, task completion, rejected privilege escalation and text messaging. Its temporary accounts and records were cleaned up. This is not a production authentication audit or physical-device test.
 

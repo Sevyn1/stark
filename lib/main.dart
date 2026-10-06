@@ -182,7 +182,14 @@ class _SessionRouterState extends State<SessionRouter> {
 
   @override
   Widget build(BuildContext context) => ScreenUtilInit(
-    designSize: const Size(375, 812),
+    designSize: Size(
+      View.of(context).physicalSize.width / View.of(context).devicePixelRatio >
+              600
+          ? View.of(context).physicalSize.width /
+                View.of(context).devicePixelRatio
+          : 375,
+      812,
+    ),
     minTextAdapt: true,
     splitScreenMode: false,
     builder: (context, _) => MaterialApp.router(

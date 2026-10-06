@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 class AttendanceModel {
@@ -39,7 +40,11 @@ class AttendanceModel {
   factory AttendanceModel.fromMap(Map<String, dynamic> map) {
     return AttendanceModel(
       employeeId: (map["employeeId"] ?? '') as String,
-      timeIn: map['timeIn'] != null ? DateTime.fromMillisecondsSinceEpoch((map["timeIn"]??0) ?? 0 as int) : null,
+      timeIn: map['timeIn'] is Timestamp
+          ? (map['timeIn'] as Timestamp).toDate()
+          : map['timeIn'] is int
+          ? DateTime.fromMillisecondsSinceEpoch(map['timeIn'] as int)
+          : null,
       status: (map["status"] ?? '') as String,
       organisationName: (map["organisationName"] ?? '') as String,
     );
@@ -47,7 +52,8 @@ class AttendanceModel {
 
   String toJson() => json.encode(toMap());
 
-  factory AttendanceModel.fromJson(String source) => AttendanceModel.fromMap(json.decode(source) as Map<String, dynamic>);
+  factory AttendanceModel.fromJson(String source) =>
+      AttendanceModel.fromMap(json.decode(source) as Map<String, dynamic>);
 
   @override
   String toString() {
@@ -57,19 +63,18 @@ class AttendanceModel {
   @override
   bool operator ==(covariant AttendanceModel other) {
     if (identical(this, other)) return true;
-  
-    return 
-      other.employeeId == employeeId &&
-      other.timeIn == timeIn &&
-      other.status == status &&
-      other.organisationName == organisationName;
+
+    return other.employeeId == employeeId &&
+        other.timeIn == timeIn &&
+        other.status == status &&
+        other.organisationName == organisationName;
   }
 
   @override
   int get hashCode {
     return employeeId.hashCode ^
-      timeIn.hashCode ^
-      status.hashCode ^
-      organisationName.hashCode;
+        timeIn.hashCode ^
+        status.hashCode ^
+        organisationName.hashCode;
   }
 }

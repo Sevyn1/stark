@@ -2,7 +2,7 @@ const {test,before,after,beforeEach}=require('node:test');
 const fs=require('node:fs');
 const path=require('node:path');
 const {initializeTestEnvironment,assertSucceeds,assertFails}=require('@firebase/rules-unit-testing');
-const {doc,setDoc,getDoc,updateDoc,collection,getDocs,query,where,writeBatch,arrayUnion,arrayRemove,deleteDoc}=require('firebase/firestore');
+const {doc,setDoc,getDoc,updateDoc,collection,getDocs,query,where,writeBatch,arrayUnion,arrayRemove,deleteDoc,serverTimestamp,Timestamp}=require('firebase/firestore');
 let env;
 const profile=(uid,org='',manager=false)=>({uid,firstName:uid,lastName:'Test',email:`${uid}@example.test`,isAdmin:manager,organisation:org,role:'Developer',phone:'',profilePic:''});
 const org=(name,manager,employees)=>({id:name,name,avatar:'',description:'',managers:[manager],employees,prospectiveEmployees:[]});
@@ -77,3 +77,15 @@ test('new employees can query memberships and their invitation inbox before join
  await assertFails(getDocs(collection(s,'invites')));
  await assertFails(getDocs(query(collection(s,'invites'),where('receiverId','==','e'))));
 });
+
+async function seedAttendance(closed=false){
+ await env.withSecurityRulesDisabled(async ctx=>{const s=ctx.firestore();await setDoc(doc(s,'attendanceRecords','A::today'),{organisationName:'A',dayKey:'today',windowStart:Timestamp.fromMillis(Date.now()-3600000),windowEnd:Timestamp.fromMillis(Date.now()+(closed?-1000:3600000)),startAt:Timestamp.fromMillis(Date.now()-1800000)});await setDoc(doc(s,'attendance','A::today::e'),{organisationName:'A',employeeId:'e',recordId:'A::today',dayKey:'today',status:'notsigned',timeIn:null,timeOut:null});});
+}
+test('employees self-check in with server time and cannot alter colleagues',async()=>{await seedAttendance();const s=db('e');await assertFails(updateDoc(doc(s,'attendance','A::today::e'),{status:'signed',timeIn:Timestamp.fromMillis(1)}));await assertSucceeds(updateDoc(doc(s,'attendance','A::today::e'),{status:'signed',timeIn:serverTimestamp()}));await assertFails(updateDoc(doc(db('other'),'attendance','A::today::e'),{status:'signed',timeIn:serverTimestamp()}));});
+test('employees cannot overwrite a check-in or their identity',async()=>{await seedAttendance();const s=db('e');const r=doc(s,'attendance','A::today::e');await assertSucceeds(updateDoc(r,{status:'signed',timeIn:serverTimestamp()}));await assertFails(updateDoc(r,{timeIn:serverTimestamp()}));await assertFails(updateDoc(r,{employeeId:'other'}));});
+test('employees check out once after their server-timed check-in',async()=>{await seedAttendance();const s=db('e');const r=doc(s,'attendance','A::today::e');await assertFails(updateDoc(r,{timeOut:serverTimestamp()}));await assertSucceeds(updateDoc(r,{status:'signed',timeIn:serverTimestamp()}));await assertSucceeds(updateDoc(r,{timeOut:serverTimestamp()}));await assertFails(updateDoc(r,{timeOut:serverTimestamp()}));});
+test('closed workdays reject employee check-ins',async()=>{await seedAttendance(true);await assertFails(updateDoc(doc(db('e'),'attendance','A::today::e'),{status:'signed',timeIn:serverTimestamp()}));});
+test('employees see only their own attendance entries',async()=>{await seedAttendance();const s=db('e');await assertSucceeds(getDocs(query(collection(s,'attendance'),where('organisationName','==','A'),where('employeeId','==','e'))));await assertFails(getDocs(query(collection(s,'attendance'),where('organisationName','==','A'))));await assertFails(getDoc(doc(db('other'),'attendance','A::today::e')));});
+
+test('managers cannot forge or overwrite an employee check-in',async()=>{await seedAttendance();await assertFails(updateDoc(doc(db('ma'),'attendance','A::today::e'),{status:'signed',timeIn:serverTimestamp()}));});
+test('members invited after workday opening can create only their own check-in entry',async()=>{await seedAttendance();const s=db('other');const entry={organisationName:'A',employeeId:'other',recordId:'A::today',dayKey:'today',status:'signed',timeIn:serverTimestamp(),timeOut:null};await assertSucceeds(setDoc(doc(s,'attendance','A::today::other'),entry));await assertFails(setDoc(doc(s,'attendance','A::today::e'),{...entry,employeeId:'e'}));});

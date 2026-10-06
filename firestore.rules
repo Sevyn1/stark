@@ -115,14 +115,34 @@ service cloud.firestore {
       allow get: if signed() && !exists(/databases/$(database)/documents/attendanceRecords/$(id)) && member(me().organisation);
       allow read: if member(resource.data.organisationName);
       allow create: if manager(request.resource.data.organisationName);
-      allow update: if manager(resource.data.organisationName) && only(['present','absent','early','late']);
+      allow update: if manager(resource.data.organisationName) && only(['present','absent','early','late','windowStart','windowEnd','startAt','timezone']);
       allow delete: if false;
     }
     match /attendance/{id} {
-      allow read: if member(resource.data.organisationName);
-      allow create: if manager(request.resource.data.organisationName)
-        && get(orgPath(request.resource.data.organisationName)).data.employees.hasAny([request.resource.data.employeeId]);
-      allow update: if manager(resource.data.organisationName) && only(['status','timeIn']);
+      function ownEntry() {
+        let d = request.resource.data;
+        let day = get(/databases/$(database)/documents/attendanceRecords/$(d.recordId)).data;
+        return signed() && d.employeeId == request.auth.uid && member(d.organisationName)
+          && get(orgPath(d.organisationName)).data.employees.hasAny([request.auth.uid])
+          && id == d.recordId + '::' + request.auth.uid && d.organisationName == day.organisationName
+          && d.dayKey == day.dayKey && request.time >= day.windowStart && request.time < day.windowEnd;
+      }
+      function selfCheckIn() {
+        return ownEntry() && request.resource.data.status == 'signed'
+          && request.resource.data.timeIn == request.time;
+      }
+      allow get: if signed() && !exists(/databases/$(database)/documents/attendance/$(id)) && member(me().organisation);
+      allow read: if manager(resource.data.organisationName)
+        || (signed() && resource.data.employeeId == request.auth.uid && member(resource.data.organisationName));
+      allow create: if (manager(request.resource.data.organisationName)
+        && get(orgPath(request.resource.data.organisationName)).data.employees.hasAny([request.resource.data.employeeId])
+        && request.resource.data.status == 'notsigned' && request.resource.data.timeIn == null)
+        || (selfCheckIn() && request.resource.data.timeOut == null
+          && request.resource.data.keys().hasOnly(['employeeId','organisationName','dayKey','recordId','status','timeIn','timeOut']));
+      allow update: if (selfCheckIn() && resource.data.status != 'signed' && only(['status','timeIn','recordId']))
+        || (ownEntry() && resource.data.status == 'signed' && resource.data.timeIn is timestamp
+          && resource.data.get('timeOut', null) == null && only(['timeOut'])
+          && request.resource.data.timeOut == request.time && request.time >= resource.data.timeIn);
       allow delete: if false;
     }
     match /messageGroup/{org} {
