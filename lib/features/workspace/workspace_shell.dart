@@ -58,20 +58,6 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
                   color: Color(0xff20613d),
                 ),
               ),
-              if (user.organisation.isNotEmpty) ...[
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Text(
-                    user.organisation,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.normal,
-                      color: Color(0xff63756c),
-                    ),
-                  ),
-                ),
-              ],
             ],
           ),
           actions: [
@@ -155,7 +141,7 @@ class WorkspaceProfile extends ConsumerWidget {
               SelectableText(u.email),
               const SizedBox(height: 12),
               Text(
-                '${u.isAdmin ? 'Manager' : 'Employee'} · ${u.organisation.isEmpty ? 'No workspace yet' : u.organisation}',
+                '${u.isAdmin ? 'Manager' : 'Employee'} · ${u.organisation.isEmpty ? 'No workspace yet' : 'Your workspace'}',
               ),
               const SizedBox(height: 24),
               Wrap(

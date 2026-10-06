@@ -98,7 +98,7 @@ class _EmployeeOverviewState extends ConsumerState<EmployeeOverView> {
         tasks = ref.watch(getTasksForEmployeesProvider);
     return WorkspacePage(
       title: 'Good to see you, ${user.firstName}',
-      subtitle: '${user.organisation} · ${DateFormat.yMMMMEEEEd().format(now)}',
+      subtitle: 'Your workspace · ${DateFormat.yMMMMEEEEd().format(now)}',
       children: [
         entries.when(
           data: (list) => MetricRow([

@@ -83,7 +83,7 @@ class _AttendanceReviewState extends ConsumerState<AttendanceReview> {
     return WorkspacePage(
       title: 'Your team, today',
       subtitle:
-          '${user.organisation} · ${DateFormat.yMMMMEEEEd().format(now)} · Toronto time',
+          'Your workspace · ${DateFormat.yMMMMEEEEd().format(now)} · Toronto time',
       children: [
         day.when(
           data: (record) {

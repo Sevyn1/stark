@@ -106,7 +106,7 @@ class _MessagingViewState extends ConsumerState<MessagingView> {
           ListTile(
             leading: const CircleAvatar(child: Icon(Icons.groups_outlined)),
             title: const Text('Team chat'),
-            subtitle: Text(user.organisation),
+            subtitle: const Text('Your workspace'),
             onTap: opening == null ? selectTeam : null,
           ),
           const Divider(),
@@ -203,7 +203,7 @@ class _MessagingViewState extends ConsumerState<MessagingView> {
                     const SizedBox(height: 4),
                     Text(
                       room == null
-                          ? 'Everyone in ${user.organisation}'
+                          ? 'Everyone in your workspace'
                           : 'Private conversation',
                       style: const TextStyle(
                         color: Color(0xff63756c),
