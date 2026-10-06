@@ -92,6 +92,7 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
         ),
         body: SafeArea(
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               if (wide)
                 NavigationRail(
