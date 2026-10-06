@@ -26,24 +26,29 @@ class MessagingRepository {
   MessagingRepository({
     required FirebaseFirestore firestore,
     required FirebaseAuth auth,
-  })  : _auth = auth,
-        _firestore = firestore;
+  }) : _auth = auth,
+       _firestore = firestore;
 
   //! get messages stream
-  Stream<List<MessageModel>> getGroupChatStream(String orgName) {
+  Stream<List<MessageModel>> getGroupChatStream(
+    String orgName, {
+    String? conversationId,
+  }) {
     return _firestore
-        .collection('messageGroup')
-        .doc(orgName)
+        .collection(
+          conversationId == null ? 'messageGroup' : 'directConversations',
+        )
+        .doc(conversationId ?? orgName)
         .collection('messages')
         .orderBy('timeSent')
         .snapshots()
         .map((event) {
-      List<MessageModel> messages = [];
-      for (var document in event.docs) {
-        messages.add(MessageModel.fromMap(document.data()));
-      }
-      return messages;
-    });
+          List<MessageModel> messages = [];
+          for (var document in event.docs) {
+            messages.add(MessageModel.fromMap(document.data()));
+          }
+          return messages;
+        });
   }
 
   // send text message
@@ -53,9 +58,12 @@ class MessagingRepository {
     required String senderUserName,
     required MessageReply? messageReply,
     required String senderProfilePic,
+    String? conversationId,
   }) async {
     try {
       if (text.trim().isEmpty) throw ArgumentError('Enter a message.');
+      if (text.trim().length > 5000)
+        throw ArgumentError('Keep messages under 5,000 characters.');
       if (orgName.isEmpty || _auth.currentUser == null)
         throw StateError('Join an organisation before messaging.');
       var timeSent = DateTime.now();
@@ -63,6 +71,7 @@ class MessagingRepository {
 
       await _saveMessageToMessageSubcollection(
         orgName: orgName,
+        conversationId: conversationId,
         text: text.trim(),
         timeSent: timeSent,
         messageId: messageId,
@@ -80,24 +89,28 @@ class MessagingRepository {
     }
   }
 
-  FutureVoid sendImageMessage(
-      {required String url,
-      required String orgName,
-      required String senderUsername,
-      required String senderProfilePic}) async {
+  FutureVoid sendImageMessage({
+    required String url,
+    required String orgName,
+    required String senderUsername,
+    required String senderProfilePic,
+    String? conversationId,
+  }) async {
     try {
       if (orgName.isEmpty || _auth.currentUser == null)
         throw StateError('Join an organisation before messaging.');
       await _saveMessageToMessageSubcollection(
-          orgName: orgName,
-          text: url,
-          timeSent: DateTime.now(),
-          messageId: const Uuid().v4(),
-          messageType: MessageEnum.image,
-          messageReply: null,
-          senderUsername: senderUsername,
-          recieverUserName: orgName,
-          senderProfilePic: senderProfilePic);
+        orgName: orgName,
+        conversationId: conversationId,
+        text: url,
+        timeSent: DateTime.now(),
+        messageId: const Uuid().v4(),
+        messageType: MessageEnum.image,
+        messageReply: null,
+        senderUsername: senderUsername,
+        recieverUserName: orgName,
+        senderProfilePic: senderProfilePic,
+      );
       return right(null);
     } catch (e) {
       return left(Failure(e.toString()));
@@ -114,12 +127,13 @@ class MessagingRepository {
     required MessageReply? messageReply,
     required String senderUsername,
     required String? recieverUserName,
+    String? conversationId,
   }) async {
     final message = MessageModel(
       senderProfilePic: senderProfilePic,
       senderUsername: senderUsername,
       senderId: _auth.currentUser!.uid,
-      recieverid: orgName,
+      recieverid: conversationId ?? orgName,
       text: text,
       type: messageType,
       timeSent: timeSent,
@@ -128,21 +142,24 @@ class MessagingRepository {
       repliedMessage: messageReply == null ? '' : messageReply.message,
       repliedTo: messageReply == null
           ? ''
+          : messageReply.senderName.isNotEmpty
+          ? messageReply.senderName
           : messageReply.isMe
-              ? senderUsername
-              : recieverUserName ?? '',
-      repliedMessageType:
-          messageReply == null ? MessageEnum.text : messageReply.messageEnum,
+          ? senderUsername
+          : recieverUserName ?? '',
+      repliedMessageType: messageReply == null
+          ? MessageEnum.text
+          : messageReply.messageEnum,
     );
 
     await _firestore
-        .collection('messageGroup')
-        .doc(orgName)
+        .collection(
+          conversationId == null ? 'messageGroup' : 'directConversations',
+        )
+        .doc(conversationId ?? orgName)
         .collection('messages')
         .doc(messageId)
-        .set(
-          message.toMap(),
-        );
+        .set({...message.toMap(), 'timeSent': FieldValue.serverTimestamp()});
   }
 
   CollectionReference get _messageGroup =>

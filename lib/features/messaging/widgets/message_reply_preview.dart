@@ -1,55 +1,48 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:stark/core/providers/message_reply_provider.dart';
-import 'package:stark/features/messaging/widgets/display_text_image_gif.dart';
-
+import '../../../core/providers/message_reply_provider.dart';
+import '../../../core/enums/enums.dart';
 
 class MessageReplyPreview extends ConsumerWidget {
-  const MessageReplyPreview({Key? key}) : super(key: key);
-
-  void cancelReply(WidgetRef ref) {
-    ref.read(messageReplyProvider.state).update((state) => null);
-  }
-
+  const MessageReplyPreview({super.key});
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final messageReply = ref.watch(messageReplyProvider);
-
+    final reply = ref.watch(messageReplyProvider);
+    if (reply == null) return const SizedBox.shrink();
     return Container(
-      width: 350,
-      padding: const EdgeInsets.all(8),
-      decoration: const BoxDecoration(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(12),
-          topRight: Radius.circular(12),
-        ),
+      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xffedf4ef),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Expanded(
                 child: Text(
-                  messageReply!.isMe ? 'Me' : 'Opposite',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  reply.isMe
+                      ? 'Replying to yourself'
+                      : reply.senderName.isEmpty
+                      ? 'Replying to a teammate'
+                      : 'Replying to ${reply.senderName}',
+                  style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
               ),
-              GestureDetector(
-                child: const Icon(
-                  Icons.close,
-                  size: 16,
-                ),
-                onTap: () => cancelReply(ref),
+              IconButton(
+                tooltip: 'Cancel reply',
+                onPressed: () =>
+                    ref.read(messageReplyProvider.notifier).state = null,
+                icon: const Icon(Icons.close, size: 18),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          DisplayTextImageGIF(
-            message: messageReply.message,
-            type: messageReply.messageEnum,
+          Text(
+            reply.messageEnum == MessageEnum.text ? reply.message : 'Photo',
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),

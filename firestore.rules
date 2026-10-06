@@ -145,6 +145,37 @@ service cloud.firestore {
           && request.resource.data.timeOut == request.time && request.time >= resource.data.timeIn);
       allow delete: if false;
     }
+    function validTextMessage(receiver) {
+      let d = request.resource.data;
+      return signed() && d.senderId == request.auth.uid && d.recieverid == receiver
+        && d.type == 'text' && d.text is string && d.text.size() > 0 && d.text.size() <= 5000
+        && d.timeSent == request.time && d.senderUsername == me().firstName + ' ' + me().lastName
+        && d.senderProfilePic == me().profilePic && d.isSeen == false;
+    }
+    match /directConversations/{room} {
+      function participant() { return signed() && resource.data.participantIds.hasAny([request.auth.uid]) && member(resource.data.organisationName); }
+      allow get: if signed() && !exists(/databases/$(database)/documents/directConversations/$(room)) && member(me().organisation);
+      allow read: if participant();
+      allow create: if signed() && request.resource.data.keys().hasOnly(['organisationName','participantIds','createdBy','createdAt'])
+        && request.resource.data.createdBy == request.auth.uid && request.resource.data.createdAt == request.time
+        && request.resource.data.participantIds is list && request.resource.data.participantIds.size() == 2
+        && request.resource.data.participantIds[0] < request.resource.data.participantIds[1]
+        && room == request.resource.data.organisationName + '::' + request.resource.data.participantIds[0] + '::' + request.resource.data.participantIds[1]
+        && request.resource.data.participantIds.hasAny([request.auth.uid])
+        && member(request.resource.data.organisationName)
+        && get(userPath(request.resource.data.participantIds[0])).data.organisation == request.resource.data.organisationName
+        && get(userPath(request.resource.data.participantIds[1])).data.organisation == request.resource.data.organisationName;
+      allow update, delete: if false;
+      match /messages/{id} {
+        function inRoom() {
+          let c = get(/databases/$(database)/documents/directConversations/$(room)).data;
+          return signed() && c.participantIds.hasAny([request.auth.uid]) && member(c.organisationName);
+        }
+        allow read: if inRoom();
+        allow create: if inRoom() && validTextMessage(room);
+        allow update, delete: if false;
+      }
+    }
     match /messageGroup/{org} {
       allow read: if member(org);
       allow create: if signed() && getAfter(orgPath(org)).data.managers.hasAny([request.auth.uid]);
@@ -156,9 +187,7 @@ service cloud.firestore {
       allow delete: if false;
       match /messages/{id} {
         allow read: if member(org);
-        allow create: if member(org) && request.resource.data.senderId == request.auth.uid
-          && request.resource.data.recieverid == org && request.resource.data.type == 'text'
-          && request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 5000;
+        allow create: if member(org) && validTextMessage(org);
         allow update, delete: if false;
       }
     }

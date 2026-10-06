@@ -1,5 +1,6 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'dart:convert';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:stark/core/enums/enums.dart';
 
@@ -55,13 +56,18 @@ class MessageModel {
       senderUsername: map['senderUsername'] ?? '',
       recieverid: map['recieverid'] ?? '',
       text: map['text'] ?? '',
-      type: (map['type'] as String).toEnum(),
-      timeSent: DateTime.fromMillisecondsSinceEpoch(map['timeSent']),
+      type: (map['type'] as String? ?? 'text').toEnum(),
+      timeSent: map['timeSent'] is Timestamp
+          ? (map['timeSent'] as Timestamp).toDate()
+          : map['timeSent'] is int
+          ? DateTime.fromMillisecondsSinceEpoch(map['timeSent'] as int)
+          : DateTime.now(),
       messageId: map['messageId'] ?? '',
       isSeen: map['isSeen'] ?? false,
       repliedMessage: map['repliedMessage'] ?? '',
       repliedTo: map['repliedTo'] ?? '',
-      repliedMessageType: (map['repliedMessageType'] as String).toEnum(),
+      repliedMessageType: (map['repliedMessageType'] as String? ?? 'text')
+          .toEnum(),
       senderProfilePic: map['senderProfilePic'] ?? '',
     );
   }

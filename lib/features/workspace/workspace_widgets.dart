@@ -91,16 +91,19 @@ class WorkspaceCard extends StatelessWidget {
   final Widget child;
   const WorkspaceCard({super.key, required this.child});
   @override
-  Widget build(BuildContext context) => Container(
-    width: double.infinity,
-    margin: const EdgeInsets.only(bottom: 20),
-    padding: const EdgeInsets.all(24),
-    decoration: BoxDecoration(
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: 20),
+    child: Material(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(20),
-      border: Border.all(color: const Color(0xffdfe8e1)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: const BorderSide(color: Color(0xffdfe8e1)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: SizedBox(width: double.infinity, child: child),
+      ),
     ),
-    child: child,
   );
 }
 

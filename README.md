@@ -50,7 +50,7 @@ The workspace now uses a desktop navigation rail and a mobile navigation bar. Em
 - Search eligible employees, send invitations, accept/reject invitations, view members and remove an employee.
 - Create projects, assign tasks to existing workspace members, update task status, complete projects after their tasks are done and reopen completed projects.
 - Managers open daily attendance with a chosen start time. Employees check themselves in and out once; Firebase supplies the timestamps. Managers review on-time/late arrivals and pending check-ins. Workdays use America/Toronto with daylight-saving changes, and employees can read only their own attendance entries.
-- Team text messages and replies; local emulator image attachments up to 5 MB. Failed text sends retain the draft. The unfinished microphone and camera controls were replaced with working text/image actions.
+- Search workspace teammates by name or email and open private two-person conversations. Team chat remains separate. Text messages use server timestamps and authenticated sender details; replies identify the original sender. Drafts are retained separately for each conversation, including after failed sends. Local emulator image attachments support files up to 5 MB. The unfinished microphone and camera controls were replaced with working text/image actions.
 - Edit names, job title and phone; profile photos are available in local emulator mode. These updates cannot overwrite account IDs, manager authority or workspace membership through the profile repository.
 
 The demo uses the application's Firebase repositories, not a separate mock dashboard. Photo and chat uploads target the local Storage emulator. Reset and verification requests in emulator mode produce local action links; they do not send real emails.
@@ -87,7 +87,7 @@ cd rules-tests
 npm test
 ```
 
-The rules enforce workspace membership, immutable profile authority, atomic invitations, task assignment and text-message sender identity. Employee search uses a minimal invitation directory rather than exposing private profiles. Spark remains subject to Firebase's service quotas; live uploads are disabled because Cloud Storage requires the Blaze plan.
+The rules enforce workspace membership, immutable profile authority, atomic invitations, task assignment and text-message sender identity. Private conversations are readable only by their two participants; managers receive no automatic access to other people’s conversations. Employee search uses a minimal invitation directory rather than exposing private profiles. Spark remains subject to Firebase's service quotas; live uploads are disabled because Cloud Storage requires the Blaze plan.
 
 ## Engineering changes
 
@@ -103,7 +103,7 @@ flutter analyze --no-fatal-infos --no-fatal-warnings
 flutter build web --dart-define=LOCAL_DEMO=true --pwa-strategy=none
 ```
 
-The regression suite includes responsive employee/manager screens, protected self check-in/checkout, Toronto midnight and DST boundaries, as well as application data workflows, membership writes, duplicates, task assignment, scoped records, attendance history/idempotency, protected profile fields and message persistence. Fake Firestore tests do not simulate real transaction contention or production security rules. Browser/native verification results are recorded separately as they are completed.
+The regression suite contains 29 app tests and 31 security-rule tests. It includes teammate search, private message persistence, conversation isolation, draft switching, responsive employee/manager screens, protected self check-in/checkout, Toronto midnight and DST boundaries, as well as application data workflows, membership writes, duplicates, task assignment, scoped records, attendance history/idempotency, protected profile fields and message persistence. Fake Firestore tests do not simulate real transaction contention or production security rules. Browser/native verification results are recorded separately as they are completed.
 
 The `*.demo.rules` files are emulator-only convenience rules. Do not deploy them as production rules. A live build requires your own Firebase configuration and reviewed rules, permissions and indexes. A live client smoke check verified signup, atomic workspace creation, invitation acceptance, task completion, rejected privilege escalation and text messaging. Its temporary accounts and records were cleaned up. This is not a production authentication audit or physical-device test.
 

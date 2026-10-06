@@ -1,4 +1,6 @@
 import 'package:stark/core/providers/firebase_provider.dart';
+import '../repositories/conversation_repository.dart';
+import '../../auth/controllers/auth_controller.dart';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -19,6 +21,25 @@ class _BottomChatFieldState extends ConsumerState<BottomChatField> {
   final focus = FocusNode();
   bool emoji = false;
   bool busy = false;
+  late final String draftKey;
+  @override
+  void initState() {
+    super.initState();
+    draftKey =
+        ref.read(activeConversationProvider)?.id ??
+        'team:${ref.read(userProvider)!.organisation}';
+    text.text = ref.read(chatDraftsProvider)[draftKey] ?? '';
+    text.addListener(() {
+      final drafts = {...ref.read(chatDraftsProvider)};
+      if (text.text.isEmpty) {
+        drafts.remove(draftKey);
+      } else {
+        drafts[draftKey] = text.text;
+      }
+      ref.read(chatDraftsProvider.notifier).state = drafts;
+    });
+  }
+
   @override
   void dispose() {
     text.dispose();
@@ -32,7 +53,7 @@ class _BottomChatFieldState extends ConsumerState<BottomChatField> {
     setState(() => busy = true);
     final sent = await ref
         .read(messagingControllerProvider.notifier)
-        .sendTextMessageManager(context: context, text: draft);
+        .sendTextMessage(context: context, text: draft);
     if (!mounted) return;
     setState(() {
       if (sent) text.clear();
@@ -76,53 +97,75 @@ class _BottomChatFieldState extends ConsumerState<BottomChatField> {
   @override
   Widget build(BuildContext context) => SafeArea(
     top: false,
-    child: Column(
-      children: [
-        if (ref.watch(messageReplyProvider) != null)
-          const MessageReplyPreview(),
-        Row(
-          children: [
-            IconButton(
-              tooltip: 'Emoji',
-              onPressed: busy ? null : () => setState(() => emoji = !emoji),
-              icon: const Icon(Icons.emoji_emotions_outlined),
-            ),
-            Expanded(
-              child: TextField(
-                controller: text,
-                focusNode: focus,
-                enabled: !busy,
-                minLines: 1,
-                maxLines: 4,
-                decoration: const InputDecoration(hintText: 'Write a message'),
-                onSubmitted: (_) => send(),
-              ),
-            ),
-            if (imageUploadsEnabled)
+    child: Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (ref.watch(messageReplyProvider) != null)
+            const MessageReplyPreview(),
+          Row(
+            children: [
               IconButton(
-                tooltip: 'Attach image',
-                onPressed: busy ? null : attach,
-                icon: const Icon(Icons.image_outlined),
+                tooltip: 'Emoji',
+                onPressed: busy
+                    ? null
+                    : () {
+                        setState(() => emoji = !emoji);
+                        if (emoji) {
+                          focus.unfocus();
+                        } else {
+                          focus.requestFocus();
+                        }
+                      },
+                icon: const Icon(Icons.emoji_emotions_outlined),
               ),
-            IconButton(
-              tooltip: 'Send message',
-              onPressed: busy ? null : send,
-              icon: busy
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.send),
-            ),
-          ],
-        ),
-        if (emoji)
-          SizedBox(
-            height: 250,
-            child: EmojiPicker(textEditingController: text),
+              Expanded(
+                child: TextField(
+                  controller: text,
+                  focusNode: focus,
+                  enabled: !busy,
+                  minLines: 1,
+                  maxLines: 4,
+                  textInputAction: TextInputAction.send,
+                  maxLength: 5000,
+                  decoration: const InputDecoration(
+                    hintText: 'Write a message',
+                    border: OutlineInputBorder(),
+                    counterText: '',
+                  ),
+                  onSubmitted: (_) => send(),
+                ),
+              ),
+              if (imageUploadsEnabled)
+                IconButton(
+                  tooltip: 'Attach image',
+                  onPressed: busy ? null : attach,
+                  icon: const Icon(Icons.image_outlined),
+                ),
+              Padding(
+                padding: const EdgeInsets.only(left: 12),
+                child: FilledButton.icon(
+                  onPressed: busy ? null : send,
+                  label: Text(busy ? 'Sending…' : 'Send'),
+                  icon: busy
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.send),
+                ),
+              ),
+            ],
           ),
-      ],
+          if (emoji)
+            SizedBox(
+              height: 250,
+              child: EmojiPicker(textEditingController: text),
+            ),
+        ],
+      ),
     ),
   );
 }
